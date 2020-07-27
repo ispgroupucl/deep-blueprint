@@ -1,0 +1,4 @@
+defaults:
+  - trainer: local
+  - model: unet
+app: hello
