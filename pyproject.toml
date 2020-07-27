@@ -7,7 +7,7 @@ authors = ["Victor Joos <victor.joos@uclouvain.be>"]
 [tool.poetry.dependencies]
 python = "^3.7"
 torch = "^1.5.1"
-monai = {extras = ["gdown"], version = "^0.2.0"}
+monai = { extras = ["gdown"], version = "^0.2.0" }
 gdown = "^3.11.1"
 nibabel = "^3.1.1"
 matplotlib = "^3.3.0"
@@ -18,7 +18,7 @@ vtk = "^9.0.1"
 itk = "^5.1.0"
 itk-texturefeatures = "^3.3.1"
 scikit-learn = "^0.23.1"
-hydra-core = "1.0.0rc1"
+hydra-core = "1.0.0rc2"
 hiplot = "^0.1.18"
 requests = "^2.24.0"
 
