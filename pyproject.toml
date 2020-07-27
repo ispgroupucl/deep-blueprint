@@ -5,7 +5,7 @@ description = ""
 authors = ["Victor Joos <victor.joos@uclouvain.be>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.6,!=3.6.0"
 torch = "^1.5.1"
 monai = { extras = ["gdown"], version = "^0.2.0" }
 gdown = "^3.11.1"
