@@ -9,6 +9,7 @@ from hydra.core.config_store import ConfigStore
 def main(cfg: DictConfig) -> None:
     print(cfg.pretty())
     print(ConfigStore.instance())
+    hydra.utils.instantiate(cfg.model)
 
 
 if __name__ == "__main__":
