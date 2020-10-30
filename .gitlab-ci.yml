@@ -1,12 +1,14 @@
 variables:
   POETRY_CACHE_DIR: "$CI_PROJECT_DIR/.cache/poetry"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  TMPDIR: "$CI_PROJECT_DIR/.tmp"
 
 cache:
   paths:
     - .cache/pip
     - .cache/poetry
     - .venv/
+    - .tmp/
 
 before_script:
   - python -V  # Print out python version for debugging
