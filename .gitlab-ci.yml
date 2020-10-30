@@ -11,7 +11,7 @@ cache:
     - .tmp/
 
 before_script:
-  - echo "$TMPDIR" # print tmpdir for debugging
+  - mkdir -p "$TMPDIR" # print tmpdir for debugging
   - python -V  # Print out python version for debugging
   - poetry run pip install -vvv torch
 
