@@ -17,5 +17,5 @@ before_script:
 test:
   script:
     - poetry run bioblue --version
-    - pytest
+    - poetry run pytest
 
