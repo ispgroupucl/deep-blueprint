@@ -13,6 +13,7 @@ before_script:
   - mkdir -p "$TMPDIR" # print tmpdir for debugging
   - python -V  # Print out python version for debugging
   - poetry install
+  - poetry run pip install setuptools
 
 test:
   script:
