@@ -1,9 +1,18 @@
+variables:
+  POETRY_CACHE_DIR: "$CI_PROJECT_DIR/.cache/poetry"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
+    - .cache/poetry
+    - .venv/
+
 before_script:
-  - pwd
-  - ls
   - python -V  # Print out python version for debugging
+  - poetry install
 
 test:
   script:
     - pwd
-    - ls
+    - poetry run bioblue --version
