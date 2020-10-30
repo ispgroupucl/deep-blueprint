@@ -8,7 +8,6 @@ cache:
     - .cache/pip
     - .cache/poetry
     - .venv/
-    - .tmp/
 
 before_script:
   - mkdir -p "$TMPDIR" # print tmpdir for debugging
@@ -17,5 +16,6 @@ before_script:
 
 test:
   script:
-    - pwd
     - poetry run bioblue --version
+    - pytest
+
