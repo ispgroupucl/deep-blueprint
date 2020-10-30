@@ -1,4 +1,6 @@
 before_script:
+  - pwd
+  - ls
   - python -V  # Print out python version for debugging
 
 test:
