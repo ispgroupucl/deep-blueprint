@@ -6,6 +6,7 @@ authors = ["Victor Joos <victor.joos@uclouvain.be>"]
 
 [tool.poetry.dependencies]
 python = ">=3.6.1,<4.0"
+numpy = "^1.19"
 torch = "~1.6.0"
 monai = { extras = ["gdown"], version = "^0.2.0" }
 gdown = "^3.11.1"
@@ -20,7 +21,6 @@ itk-texturefeatures = "^3.3.1"
 scikit-learn = "^0.23.1"
 hydra-core = "^1.0.3"
 hiplot = "^0.1.18"
-requests = "^2.24.0"
 mlflow = "^1.10.0"
 optuna = "^2.0.0"
 hydra-submitit-launcher = "^1.0.0"
