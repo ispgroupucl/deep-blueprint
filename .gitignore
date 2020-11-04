@@ -1,6 +1,9 @@
 # Hydra outputs
 outputs/
 
+# Data directory
+data/
+
 ## Project ignores
 .vscode/
 
