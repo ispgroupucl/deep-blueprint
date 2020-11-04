@@ -11,6 +11,7 @@ cache:
 before_script:
   - mkdir -p "$TMPDIR" # print tmpdir for debugging
   - python -V # Print out python version for debugging
+  - env # print all environment variables
   - poetry install
   - poetry run pip install -U setuptools
 
