@@ -8,14 +8,19 @@ cache:
     - .cache/pip
     - .cache/poetry
 
-before_script:
-  - mkdir -p "$TMPDIR" # print tmpdir for debugging
-  - python -V # Print out python version for debugging
-  - env # print all environment variables
-  - poetry install
-  - poetry run pip install -U setuptools
-
-test:
+update_git:
   script:
-    - poetry run bioblue --version
-    - poetry run pytest
+    - echo $GLOBALSCRATCH
+    - cd $GLOBALSCRATCH
+    - ls
+# before_script:
+#   - mkdir -p "$TMPDIR" # print tmpdir for debugging
+#   - python -V # Print out python version for debugging
+#   - env # print all environment variables
+#   - poetry install
+#   - poetry run pip install -U setuptools
+
+# test:
+#   script:
+#     - poetry run bioblue --version
+#     - poetry run pytest
