@@ -1,25 +1,24 @@
-variables:
-  POETRY_CACHE_DIR: "$CI_PROJECT_DIR/.cache/poetry"
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  TMPDIR: "$CI_PROJECT_DIR/.tmp"
+# variables:
+#   POETRY_CACHE_DIR: "$CI_PROJECT_DIR/.cache/poetry"
+#   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+#   TMPDIR: "$CI_PROJECT_DIR/.tmp"
 
-cache:
-  paths:
-    - .cache/pip
-    - .cache/poetry
+# cache:
+#   paths:
+#     - .cache/pip
+#     - .cache/poetry
+
+before_script:
+  - python -V # Print out python version for debugging
+  - env # print all environment variables
+  - poetry install
+  - poetry run pip install -U setuptools
 
 update_git:
   script:
     - echo $GLOBALSCRATCH
     - cd $GLOBALSCRATCH
     - ls
-# before_script:
-#   - mkdir -p "$TMPDIR" # print tmpdir for debugging
-#   - python -V # Print out python version for debugging
-#   - env # print all environment variables
-#   - poetry install
-#   - poetry run pip install -U setuptools
-
 # test:
 #   script:
 #     - poetry run bioblue --version
