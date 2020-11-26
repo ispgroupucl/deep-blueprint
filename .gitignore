@@ -1,5 +1,6 @@
 # Hydra outputs
 outputs/
+mlruns/
 
 # Data directory
 data/

@@ -1,4 +1,3 @@
 # @package _group_
 _target_: bioblue.model.Unet
-params:
-  bn: false
+bn: false

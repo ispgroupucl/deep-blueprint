@@ -19,7 +19,7 @@ vtk = "^9.0.1"
 itk = "^5.1.0"
 itk-texturefeatures = "^3.3.1"
 scikit-learn = "^0.23.1"
-hydra-core = "^1.0.3"
+hydra-core = "^1.0"
 hiplot = "^0.1.18"
 mlflow = "^1.10.0"
 optuna = "^2.0.0"
@@ -30,9 +30,12 @@ SimpleITK = "^2.0.1"
 plotly = "^4.12.0"
 jupyter-dash = "^0.3.1"
 itkwidgets = "^0.32.0"
+albumentations = "^0.5.1"
+pyvista = "^0.27.0"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^6.1"
+hypothesis = {extras = ["numpy"], version = "^5.41.2"}
 jupyterlab = "^2.2.0"
 ipympl = "^0.5.7"
 black = "^19.10b0"
@@ -44,6 +47,9 @@ bioblue = 'bioblue.train:main'
 [[tool.poetry.source]]
 name = "forge"
 url = "https://forge.uclouvain.be/api/v4/projects/1124/packages/pypi"
+
+[tool.pytest.ini_options]
+log_cli = true
 
 [build-system]
 requires = ["poetry>=0.12"]

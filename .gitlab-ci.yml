@@ -9,15 +9,11 @@
 #     - .cache/poetry
 
 before_script:
-  - python -V # Print out python version for debugging
-  - env # print all environment variables
-  - poetry install
-  - poetry run pip install -U setuptools
+  - cd $CECIHOME
 
 update_git:
   script:
-    - echo $GLOBALSCRATCH
-    - cd $GLOBALSCRATCH
+    - pwd
     - ls
 # test:
 #   script:

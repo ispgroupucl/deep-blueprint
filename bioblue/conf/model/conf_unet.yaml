@@ -1,0 +1,12 @@
+# @package _group_
+_target_: bioblue.model.ConfUnet
+model_cfg:
+  _target_: bioblue.model.ModelConfig
+architecture:
+  first: 32
+  enc:
+    width: [16, 32, 48, 96]
+    repeat: [2, 3, 3, 4]
+  dec:
+    width: [48, 32, 32]
+    repeat: [2, 2, 1]

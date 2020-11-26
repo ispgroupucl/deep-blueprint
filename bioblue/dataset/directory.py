@@ -6,13 +6,32 @@ import numpy as np
 import nibabel
 
 
-class DVNDataModule(pl.LightningDataModule):
+class DirectoryDataModule(pl.LightningDataModule):
+    """ Directory data module.
+    
+    Reads any dataset that has the following structure::
+        
+        dataset/
+            unlabeled/
+                image/
+            labeled/
+                image/
+                segmentation/
+
+    Args:
+        data_dir: path to the directory containing the data
+        directory: dir inside the data_dir
+        batch_size: size of the batches
+        dtypes: list/tuple of different types of data to read
+        splits: 3-tuple random split of the data for train/test/val 
+    """
+
     def __init__(
         self,
         data_dir: str = "./data",
+        directory: str = "HepaticVessel",
         batch_size: int = 2,
-        directory: str = "deepvesselnet",
-        dtypes=("raw", "seg"),
+        dtypes=("image", "segmentation"),
         splits=(0.9, 0.05, 0.05),
     ):
         super().__init__()
@@ -26,8 +45,9 @@ class DVNDataModule(pl.LightningDataModule):
         pass
 
     def setup(self, stage=None):
+        # TODO : read labeled AND unlabeled
         dataset = DirectoryDataset(
-            root_dir=Path(self.data_dir) / self.dir, dtypes=self.dtypes
+            root_dir=Path(self.data_dir) / self.dir / "labeled", dtypes=self.dtypes
         )
         if self.splits[0] < 1:
             splits = [int(x) for x in len(dataset) * np.array(self.splits)]

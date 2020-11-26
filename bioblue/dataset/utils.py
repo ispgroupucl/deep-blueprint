@@ -54,3 +54,28 @@ class DirectoryDataset(Dataset):
     def __getitem__(self, idx):
         result = read_sample(self.fname_samples[idx])
         return result
+
+
+class NumpyDataset(Dataset):
+    def __init__(self, root_dir, dtypes):
+        self.dtypes = dtypes
+        self.files = {}
+        all_len = []
+        for dtype in dtypes:
+            data = np.load(root_dir / (dtype + ".npz"))
+            self.files[dtype] = data
+            all_len.append(len(data.files))
+
+        assert len(np.unique(all_len)) == 1, f"unequal number of images"
+
+        self.length = all_len[0]
+
+    def __len__(self) -> int:
+        return self.length
+
+    def __getitem__(self, index: int):
+        return {
+            dtype: self.files[dtype][self.files[dtype].files[index]]
+            for dtype in self.dtypes
+        }
+
