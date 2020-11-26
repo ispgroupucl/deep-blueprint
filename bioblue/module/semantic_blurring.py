@@ -34,6 +34,8 @@ class SemanticBlur(pl.LightningModule):
         return loss
 
     def on_train_end(self) -> None:
+        if self.trainer.checkpoint_callback is None:
+            return
         if len(self.trainer.checkpoint_callback.best_model_path) > 0:
             self.logger.experiment.log_artifact(
                 run_id=self.logger.run_id,
