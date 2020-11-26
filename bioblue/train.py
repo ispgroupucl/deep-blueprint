@@ -11,9 +11,6 @@ import pytorch_lightning as pl
 def main(cfg: DictConfig) -> None:
     datamodule = instantiate(cfg.dataset)
     module = instantiate(cfg.module)
-    # trainer = hydra.utils.instantiate(cfg.trainer)
-    print(OmegaConf.to_yaml(cfg, resolve=True))
-    # print(cfg.module.segmenter, module)
     trainer = instantiate(cfg.trainer)
     trainer.tune(module, datamodule=datamodule)
     trainer.fit(module, datamodule=datamodule)

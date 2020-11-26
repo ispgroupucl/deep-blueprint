@@ -1,5 +1,2 @@
 # @package _group_
 _target_: pytorch_lightning.Trainer
-gpus: 0
-max_epochs: 2
-fast_dev_run: true

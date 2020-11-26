@@ -1,6 +1,0 @@
-# @package _group_
-_target_: pytorch_lightning.Trainer
-max_epochs: 100
-gpus: 1
-auto_select_gpus: true
-auto_scale_batch_size: true
