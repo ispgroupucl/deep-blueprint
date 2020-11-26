@@ -33,6 +33,7 @@ itkwidgets = "^0.32.0"
 albumentations = "^0.5.1"
 pyvista = "^0.27.0"
 boto3 = "^1.16.25"
+gorilla = "^0.3.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1"

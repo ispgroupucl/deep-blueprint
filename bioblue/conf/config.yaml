@@ -5,3 +5,11 @@ defaults:
   - dataset: synthetic
   - logger: "mlflow"
   - server: "???"
+
+hydra:
+  job:
+    env_set:
+      AWS_ACCESS_KEY_ID: vjoosdtb
+      AWS_SECRET_ACCESS_KEY: qsdfghjk
+      MLFLOW_S3_ENDPOINT_URL: "http://betelgeuse.elen.ucl.ac.be:9000"
+      MLFLOW_S3_IGNORE_TLS: "true"

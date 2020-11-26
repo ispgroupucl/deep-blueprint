@@ -28,8 +28,17 @@ class SemanticBlur(pl.LightningModule):
         # kernel = torch.ones(self.kernel_size, device=self.device)
         # smooth_img = torch.sum(F.conv2d(img * seg, kernel), axis=1)
         loss = F.cross_entropy(seg_hat, seg)
-
+        self.log(
+            "train_loss", loss, prog_bar=True, on_step=True, on_epoch=True, logger=True
+        )
         return loss
+
+    def validation_epoch_end(self, outputs) -> None:
+        if len(self.trainer.checkpoint_callback.best_model_path) > 0:
+            self.logger.experiment.log_artifact(
+                run_id=self.logger.run_id,
+                local_path=self.trainer.checkpoint_callback.best_model_path,
+            )
 
     def validation_step(self, batch, batch_idx):
         seg = batch["segmentation"].to(torch.long)
@@ -38,7 +47,9 @@ class SemanticBlur(pl.LightningModule):
         seg_hat = self(dict(image=img))
 
         loss = F.cross_entropy(seg_hat, seg)
-
+        self.log(
+            "val_loss", loss, prog_bar=True, on_step=True, on_epoch=True, logger=True
+        )
         return loss
 
     def configure_optimizers(self):
