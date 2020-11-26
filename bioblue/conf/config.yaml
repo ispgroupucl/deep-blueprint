@@ -1,5 +1,5 @@
 defaults:
-  - trainer: local
+  - trainer: "???"
   - model: conf_unet
   - module: semantic_blurring
   - dataset: synthetic

@@ -14,7 +14,8 @@ def main(cfg: DictConfig) -> None:
     # trainer = hydra.utils.instantiate(cfg.trainer)
     print(OmegaConf.to_yaml(cfg, resolve=True))
     # print(cfg.module.segmenter, module)
-    trainer = pl.Trainer()
+    trainer = instantiate(cfg.trainer)
+    trainer.tune(module, datamodule=datamodule)
     trainer.fit(module, datamodule=datamodule)
 
 
