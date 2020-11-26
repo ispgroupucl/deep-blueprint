@@ -11,7 +11,8 @@ import pytorch_lightning as pl
 def main(cfg: DictConfig) -> None:
     datamodule = instantiate(cfg.dataset)
     module = instantiate(cfg.module)
-    trainer = instantiate(cfg.trainer)
+    logger = instantiate(cfg.logger)
+    trainer = instantiate(cfg.trainer, logger=logger)
     trainer.tune(module, datamodule=datamodule)
     trainer.fit(module, datamodule=datamodule)
 

@@ -2,4 +2,7 @@
 trainer:
   gpus: 0
   max_epochs: 2
-  fast_dev_run: true
+  limit_train_batches: 2
+  # fast_dev_run: true
+
+exp: test

@@ -1,6 +1,7 @@
 defaults:
   - trainer: default
-  - server: "???"
   - model: conf_unet
   - module: semantic_blurring
   - dataset: synthetic
+  - logger: "mlflow"
+  - server: "???"
