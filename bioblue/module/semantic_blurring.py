@@ -32,7 +32,14 @@ class SemanticBlur(pl.LightningModule):
         self.log(
             "train_loss", loss, prog_bar=True, on_step=False, on_epoch=True, logger=True
         )
-        return loss
+        return dict(loss=loss, pred=seg_hat, target=seg)
+
+    def training_epoch_end(self, outputs) -> None:
+        preds = plF.to_categorical(torch.cat([tmp["pred"] for tmp in outputs]))
+        targets = torch.cat([tmp["target"] for tmp in outputs])
+
+        iou_val = plF.iou(preds, targets, num_classes=2)
+        self.log("train_iou", iou_val, prog_bar=True, logger=True)
 
     def on_train_end(self) -> None:
         if self.trainer.checkpoint_callback is None:
@@ -62,7 +69,7 @@ class SemanticBlur(pl.LightningModule):
         targets = torch.cat([tmp["target"] for tmp in outputs])
 
         iou_val = plF.iou(preds, targets, num_classes=2)
-        self.log("iou", iou_val, prog_bar=True, logger=True)
+        self.log("val_iou", iou_val, prog_bar=True, logger=True)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
