@@ -6,7 +6,8 @@ from pathlib import Path
 from tqdm import tqdm
 import multiprocessing as mp
 import logging
-
+from filelock import FileLock
+import json
 from torch.utils.data import random_split, DataLoader
 import pytorch_lightning as pl
 
@@ -25,31 +26,43 @@ class SyntheticDataModule(pl.LightningDataModule):
         directory: str = "synthetic",
         batch_size=2,
         num_workers=1,
+        points=200,
+        links=2,
     ):
         super().__init__()
         self.sizes = dict(train=train_size, val=val_size, test=test_size)
-        self.dir = Path(data_dir) / directory
+        self.data_dir = Path(data_dir)
+        self.dirprefix = directory
         self.shape = shape
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.arguments = self.get_init_arguments_and_types()
+        self.points = points
+        self.links = 2
+        self.lock = FileLock(self.data_dir / (self.dirname + ".lock"))
+        self.dir = Path(data_dir) / self.dirname
+
+    @property
+    def dirname(self):
+        return f"{self.dirprefix}_s{self.sizes['train']}-{self.sizes['val']}-{self.sizes['test']}_p{self.points}_l{self.links}"
 
     def prepare_data(self) -> None:
-        if self.dir.exists():
-            return
-        img = np.zeros(self.shape)
-        self.dir.mkdir(parents=True, exist_ok=True)
-        for name, size in self.sizes.items():
-            log.info(f"Creating {name}")
-            imgs = []
-            segms = []
-            shapes = size * [self.shape]
-            with mp.Pool(12) as pool:
-                results = pool.map(create_random_image, shapes)
-            imgs = [x[0] for x in results]
-            segms = [x[1] for x in results]
-            (self.dir / name).mkdir()
-            for dtype, arrays in zip(["image", "segmentation"], [imgs, segms]):
-                np.savez_compressed(self.dir / name / (dtype + ".npz"), *arrays)
+        with self.lock.acquire():
+            if self.dir.exists():
+                return
+            self.dir.mkdir(parents=True, exist_ok=True)
+            for name, size in self.sizes.items():
+                log.info(f"Creating {name}")
+                imgs = []
+                segms = []
+                shapes = size * [self.shape]
+                with mp.Pool(12) as pool:
+                    results = pool.map(create_random_image, shapes)
+                imgs = [x[0] for x in results]
+                segms = [x[1] for x in results]
+                (self.dir / name).mkdir()
+                for dtype, arrays in zip(["image", "segmentation"], [imgs, segms]):
+                    np.savez_compressed(self.dir / name / (dtype + ".npz"), *arrays)
 
     def setup(self, stage=None):
         self.train = NumpyDataset(self.dir / "train", ["image", "segmentation"])
