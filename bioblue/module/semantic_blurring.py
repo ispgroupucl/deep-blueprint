@@ -7,7 +7,7 @@ from hydra.utils import instantiate
 
 
 class SemanticBlur(pl.LightningModule):
-    def __init__(self, segmenter, kernel_size=3, lr=1e-3):
+    def __init__(self, segmenter, kernel_size=3, lr=1e-3, ssl=False):
         super().__init__()
         self.save_hyperparameters()
         if hasattr(segmenter, "_target_"):
@@ -15,6 +15,7 @@ class SemanticBlur(pl.LightningModule):
 
         self.segmenter = segmenter
         self.kernel_size = kernel_size
+        self.ssl = ssl
 
     def forward(self, x):
         seg = self.segmenter(x)[0]
@@ -26,9 +27,20 @@ class SemanticBlur(pl.LightningModule):
         img = batch["image"].to(torch.float)
         img = img.unsqueeze(1)
         seg_hat = self(dict(image=img))
-        # kernel = torch.ones(self.kernel_size, device=self.device)
-        # smooth_img = torch.sum(F.conv2d(img * seg, kernel), axis=1)
-        loss = F.cross_entropy(seg_hat, seg)
+        if self.ssl:
+            # TODO: fix for multiple classes ?
+            kernel = torch.ones(
+                (img.shape[0], seg_hat.shape[1], self.kernel_size, self.kernel_size),
+                device=self.device,
+            )
+            smooth_img = torch.sum(
+                F.conv2d(img * seg_hat, kernel, padding=self.kernel_size // 2),
+                axis=1,
+                keepdim=True,
+            )
+            loss = F.mse_loss(smooth_img, img)
+        else:
+            loss = F.cross_entropy(seg_hat, seg)
         self.log(
             "train_loss", loss, prog_bar=True, on_step=False, on_epoch=True, logger=True
         )
