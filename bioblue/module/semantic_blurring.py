@@ -29,6 +29,7 @@ class SemanticBlur(pl.LightningModule):
         seg_hat = self(dict(image=img))
         if self.ssl:
             # TODO: fix for multiple classes ?
+            seg_hat = F.softmax(seg_hat)
             kernel = torch.ones(
                 (img.shape[0], seg_hat.shape[1], self.kernel_size, self.kernel_size),
                 device=self.device,

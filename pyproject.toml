@@ -34,6 +34,7 @@ albumentations = "^0.5.1"
 pyvista = "^0.27.0"
 boto3 = "^1.16.25"
 gorilla = "^0.3.0"
+minio = "^6.0.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1"

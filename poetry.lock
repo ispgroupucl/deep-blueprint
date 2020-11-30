@@ -392,6 +392,18 @@ python-versions = "*"
 test = ["flake8 (3.7.8)", "hypothesis (3.55.3)"]
 
 [[package]]
+name = "configparser"
+version = "5.0.1"
+description = "Updated configparser from Python 3.8 for Python 2.6+."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.extras]
+docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
+testing = ["pytest (>=3.5,<3.7.3 || >3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pytest-cov", "jaraco.test (>=3.2.0)", "pytest-black (>=0.3.7)", "pytest-mypy"]
+
+[[package]]
 name = "cryptography"
 version = "3.2.1"
 description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
@@ -762,7 +774,7 @@ submitit = ">=1.0.0"
 
 [[package]]
 name = "hypothesis"
-version = "5.41.3"
+version = "5.41.4"
 description = "A library for property-based testing"
 category = "dev"
 optional = false
@@ -1381,6 +1393,21 @@ numpy = "*"
 
 [package.extras]
 all = ["netcdf4", "h5py"]
+
+[[package]]
+name = "minio"
+version = "6.0.2"
+description = "MinIO Python Library for Amazon S3 Compatible Cloud Storage for Python"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+certifi = "*"
+configparser = "*"
+python-dateutil = "*"
+pytz = "*"
+urllib3 = "*"
 
 [[package]]
 name = "mistune"
@@ -2734,7 +2761,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.1,<4.0"
-content-hash = "d00def7774757f658d64bbd5243129c571e3b77eec040b165a7317816f0d3060"
+content-hash = "0bfcdb4c8e6f190382b215706f9df384b7758b20bd750ef9ddf77bb16f345911"
 
 [metadata.files]
 absl-py = [
@@ -2942,6 +2969,10 @@ commonmark = [
     {file = "commonmark-0.9.1-py2.py3-none-any.whl", hash = "sha256:da2f38c92590f83de410ba1a3cbceafbc74fee9def35f9251ba9a971d6d66fd9"},
     {file = "commonmark-0.9.1.tar.gz", hash = "sha256:452f9dc859be7f06631ddcb328b6919c67984aca654e5fefb3914d54691aed60"},
 ]
+configparser = [
+    {file = "configparser-5.0.1-py3-none-any.whl", hash = "sha256:08e8a59ef1817ac4ed810bb8e17d049566dd6e024e7566f6285c756db2bb4ff8"},
+    {file = "configparser-5.0.1.tar.gz", hash = "sha256:005c3b102c96f4be9b8f40dafbd4997db003d07d1caa19f37808be8031475f2a"},
+]
 cryptography = [
     {file = "cryptography-3.2.1-cp27-cp27m-macosx_10_10_x86_64.whl", hash = "sha256:6dc59630ecce8c1f558277ceb212c751d6730bd12c80ea96b4ac65637c4f55e7"},
     {file = "cryptography-3.2.1-cp27-cp27m-manylinux1_x86_64.whl", hash = "sha256:75e8e6684cf0034f6bf2a97095cb95f81537b12b36a8fedf06e73050bb171c2d"},
@@ -3113,8 +3144,8 @@ hydra-submitit-launcher = [
     {file = "hydra_submitit_launcher-1.0.1-py3-none-any.whl", hash = "sha256:140d8ea19a36d89d42a1dae237dd40e5151671a45206955a304366c2de95d8f1"},
 ]
 hypothesis = [
-    {file = "hypothesis-5.41.3-py3-none-any.whl", hash = "sha256:989162a9e0715c624b99ad9b2b4206765879b40eb51eef17b1e37de3e898370a"},
-    {file = "hypothesis-5.41.3.tar.gz", hash = "sha256:6a3471ff74864ab04a0650c75500ef15f2f4a901d49ccbb7cbec668365736688"},
+    {file = "hypothesis-5.41.4-py3-none-any.whl", hash = "sha256:fdc490f98d81861e218c77f222ae889c993ff9d6d579dd4c9bb7b75e2dc63852"},
+    {file = "hypothesis-5.41.4.tar.gz", hash = "sha256:7ef22dd2ae4a906ef1e237dcd6806aa7f97e30c37f924a0e6d595f4639350b53"},
 ]
 idna = [
     {file = "idna-2.10-py2.py3-none-any.whl", hash = "sha256:b97d804b1e9b523befed77c48dacec60e6dcb0b5391d57af6a65a312a90648c0"},
@@ -3475,6 +3506,11 @@ matplotlib = [
 meshio = [
     {file = "meshio-4.3.5-py3-none-any.whl", hash = "sha256:ab0dabb240d86a55c7bcb5cbd297131a0e1f04281d2e363cf576daeba2ede728"},
     {file = "meshio-4.3.5.tar.gz", hash = "sha256:e69a715acdd04f80adadd66da02940f8560e50803b5e9d69defbb88d583509ea"},
+]
+minio = [
+    {file = "minio-6.0.2-py2.py3-none-any.whl", hash = "sha256:eec4ab073ff979c34e928e532d8acc1d40d61ba4404709cf27ab3ecdcfa2a561"},
+    {file = "minio-6.0.2-py3.6.egg", hash = "sha256:7cb075b56bac894551304cb824f958069a84e0dd2d0a685f9bed3c05e15727bf"},
+    {file = "minio-6.0.2.tar.gz", hash = "sha256:acae9bfae0aec1b92025bd63e18135ebb4994c84600716c5323e14cb0c9a0b03"},
 ]
 mistune = [
     {file = "mistune-0.8.4-py2.py3-none-any.whl", hash = "sha256:88a1051873018da288eee8538d476dffe1262495144b33ecb586c4ab266bb8d4"},
