@@ -22,7 +22,8 @@ class NumpyDataModule(pl.LightningDataModule):
         self.data_dir = Path(data_dir)
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.dir = Path(data_dir) / self.directory
+        self.directory = directory
+        self.dir = Path(data_dir) / directory
 
     def prepare_data(self) -> None:
         pass
