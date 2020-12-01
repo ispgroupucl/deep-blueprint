@@ -50,7 +50,7 @@ class SemanticBlur(pl.LightningModule):
 
     def training_epoch_end(self, outputs) -> None:
         ious = torch.stack([tmp["iou"] for tmp in outputs])
-        iou_val = torch.sum(ious)
+        iou_val = torch.mean(ious)
         self.log("train_iou", iou_val, prog_bar=True, logger=True)
 
     def on_train_end(self) -> None:
