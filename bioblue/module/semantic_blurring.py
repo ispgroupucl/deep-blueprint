@@ -45,13 +45,12 @@ class SemanticBlur(pl.LightningModule):
         self.log(
             "train_loss", loss, prog_bar=True, on_step=False, on_epoch=True, logger=True
         )
-        return dict(loss=loss, pred=seg_hat, target=seg)
+        iou_val = plF.iou(plF.to_categorical(seg_hat), seg, num_classes=2)
+        return dict(loss=loss, iou=iou_val)
 
     def training_epoch_end(self, outputs) -> None:
-        preds = plF.to_categorical(torch.cat([tmp["pred"] for tmp in outputs]))
-        targets = torch.cat([tmp["target"] for tmp in outputs])
-
-        iou_val = plF.iou(preds, targets, num_classes=2)
+        ious = torch.stack([tmp["iou"] for tmp in outputs])
+        iou_val = torch.sum(ious)
         self.log("train_iou", iou_val, prog_bar=True, logger=True)
 
     def on_train_end(self) -> None:
