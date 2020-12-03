@@ -1,5 +1,4 @@
 from bioblue.dataset import synthetic
-from bioblue.model import reconstruct
 import pytest
 from hypothesis import given
 import hypothesis.strategies as hs
@@ -82,6 +81,23 @@ def test_syntheticdatamodule():
     dm.setup()
     train_dl = dm.train_dataloader()
     assert len(train_dl) == np.ceil(size / batch_size)
+
+
+def test_random_image():
+    for i in range(2):
+        cimg, segm = bb.dataset.create_image(
+            (512, 512),
+            50,
+            3,
+            fg_intensity_range=(50, 256),
+            weight_range=(1, 10),
+            max_shapes=10,
+        )
+        # cimg, segm = bb.dataset.create_random_image((512, 512))
+        plt.imshow(cimg)
+        plt.show()
+        plt.imshow(segm)
+        plt.show()
 
 
 def test_weighted_line():

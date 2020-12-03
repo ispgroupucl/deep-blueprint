@@ -2,6 +2,11 @@
 trainer:
   max_epochs: 100
   gpus: ${gpus}
-  auto_select_gpus: true
-  auto_scale_batch_size: true
+  auto_scale_batch_size: false
 gpus: "???"
+callbacks:
+  - _target_: bioblue.callback.MLFlowCallback
+    log_models: true
+  - _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    dirpath: "./models"
+    save_last: true

@@ -53,14 +53,14 @@ class SemanticBlur(pl.LightningModule):
         iou_val = torch.mean(ious)
         self.log("train_iou", iou_val, prog_bar=True, logger=True)
 
-    def on_train_end(self) -> None:
-        if self.trainer.checkpoint_callback is None:
-            return
+    # def on_train_end(self) -> None:
+    #     if self.trainer.checkpoint_callback is None:
+    #         return
 
-        if len(self.trainer.checkpoint_callback.best_model_path) > 0:
-            self.logger.experiment.log_artifacts(
-                run_id=self.logger.run_id, local_dir="./models", artifact_path="models"
-            )
+    #     if len(self.trainer.checkpoint_callback.best_model_path) > 0:
+    #         self.logger.experiment.log_artifacts(
+    #             run_id=self.logger.run_id, local_dir="./models", artifact_path="models"
+    #         )
 
     def validation_step(self, batch, batch_idx):
         seg = batch["segmentation"].to(torch.long)

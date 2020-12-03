@@ -8,6 +8,8 @@ import multiprocessing as mp
 import logging
 from filelock import FileLock
 import json
+import yaml
+import hashlib
 from torch.utils.data import random_split, DataLoader
 import pytorch_lightning as pl
 
@@ -26,8 +28,13 @@ class SyntheticDataModule(pl.LightningDataModule):
         directory: str = "synthetic",
         batch_size=2,
         num_workers=1,
-        points=200,
-        links=2,
+        points_range=(20, 21),
+        links_range=(3, 4),
+        max_shapes=1000,
+        size_range=(50, 500),
+        weight_range=(1, 5),
+        bg_intensity_range=(0, 50),
+        fg_intensity_range=(0, 256),
     ):
         super().__init__()
         self.sizes = dict(train=train_size, val=val_size, test=test_size)
@@ -36,28 +43,41 @@ class SyntheticDataModule(pl.LightningDataModule):
         self.shape = shape
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.arguments = self.get_init_arguments_and_types()
-        self.points = points
-        self.links = 2
+        self.parameters = (
+            tuple(shape),
+            tuple(points_range),
+            tuple(links_range),
+            max_shapes,
+            tuple(size_range),
+            tuple(weight_range),
+            tuple(bg_intensity_range),
+            tuple(fg_intensity_range),
+        )
+        self.arguments = {
+            x[0]: x[2] for x in self.get_init_arguments_and_types() if x[0] != "self"
+        }
         self.lock = FileLock(self.data_dir / (self.dirname + ".lock"))
         self.dir = Path(data_dir) / self.dirname
 
     @property
     def dirname(self):
-        return f"{self.dirprefix}_s{self.sizes['train']}-{self.sizes['val']}-{self.sizes['test']}_p{self.points}_l{self.links}"
+        h = hashlib.sha1(json.dumps(self.arguments).encode()).hexdigest()
+        return f"{self.dirprefix}_{h[:10]}"
 
     def prepare_data(self) -> None:
         with self.lock.acquire():
             if self.dir.exists():
                 return
             self.dir.mkdir(parents=True, exist_ok=True)
+            with open(self.dir / "config.yaml", "w") as f:
+                yaml.safe_dump(self.arguments, f)
             for name, size in self.sizes.items():
                 log.info(f"Creating {name}")
                 imgs = []
                 segms = []
-                shapes = size * [self.shape]
+                parameters = size * [self.parameters]
                 with mp.Pool(12) as pool:
-                    results = pool.map(create_random_image, shapes)
+                    results = pool.starmap(create_image, parameters)
                 imgs = [x[0] for x in results]
                 segms = [x[1] for x in results]
                 (self.dir / name).mkdir()
@@ -86,12 +106,31 @@ class SyntheticDataModule(pl.LightningDataModule):
 
 
 def create_random_image(shape):
-    img = np.zeros(shape)
     rng = np.random.default_rng()
-    points = rng.integers(100, 500)
+    points = rng.integers(10, 500)
     links = rng.integers(3, 20)
-    background = random_objects(img)
-    cimg, segm = random_lines(background, points, links)
+    cimg, segm = create_image(shape, points, links)
+    return cimg, segm
+
+
+def create_image(
+    shape,
+    points_range=(20, 21),
+    links_range=(3, 4),
+    max_shapes=1000,
+    size_range=(50, 500),
+    weight_range=(1, 5),
+    bg_intensity_range=(0, 50),
+    fg_intensity_range=(0, 256),
+):
+    rng = np.random.default_rng()
+    points = rng.integers(*points_range)
+    links = rng.integers(*links_range)
+    img = np.zeros(shape)
+    background = random_objects(img, max_shapes, *size_range, bg_intensity_range)
+    cimg, segm = random_lines(
+        background, points, links, fg_intensity_range, weight_range
+    )
 
     return cimg, segm
 
@@ -113,7 +152,9 @@ def random_objects(
     return drawing
 
 
-def random_lines(img, points=200, links=2):
+def random_lines(
+    img, points=200, links=2, intensity_range=(0, 256), weight_range=(1, 5)
+):
     rng = np.random.default_rng()
     p = rng.integers(low=(0, 0), high=img.shape, size=(points, 2))
     p = np.unique(p, axis=0)  # remove same points
@@ -129,9 +170,9 @@ def random_lines(img, points=200, links=2):
     segm = np.zeros_like(img)
     for coord in range(len(line_coords)):
         xx, yy, val = weighted_line(
-            *line_coords[coord], w=rng.integers(5), rmax=img.shape[0]
+            *line_coords[coord], w=rng.integers(*weight_range), rmax=img.shape[0]
         )
-        img[xx, yy] = rng.integers(256)
+        img[xx, yy] = rng.integers(*intensity_range)
         segm[xx, yy] = 1
     return img, segm
 

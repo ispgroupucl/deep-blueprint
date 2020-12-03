@@ -1,0 +1,6 @@
+# @package _global_
+exp: test
+trainer:
+  max_epochs: 2
+  limit_train_batches: 2
+  limit_val_batches: 2

@@ -5,6 +5,7 @@ defaults:
   - dataset: synthetic
   - logger: "mlflow"
   - server: "???"
+  - exp: test
 
 hydra:
   job:
