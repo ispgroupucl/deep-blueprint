@@ -12,6 +12,9 @@ import yaml
 import hashlib
 from torch.utils.data import random_split, DataLoader
 import pytorch_lightning as pl
+from pytorch_lightning.utilities.parsing import get_init_args
+import inspect
+from omegaconf import Container
 
 
 log = logging.getLogger(__name__)
@@ -53,15 +56,18 @@ class SyntheticDataModule(pl.LightningDataModule):
             tuple(bg_intensity_range),
             tuple(fg_intensity_range),
         )
-        self.arguments = {
-            x[0]: x[2] for x in self.get_init_arguments_and_types() if x[0] != "self"
-        }
+        # TODO : find solution to this mess
+        self.arguments = get_init_args(inspect.currentframe())
+        for name, argument in self.arguments.items():
+            self.arguments[name] = (
+                tuple(argument) if isinstance(argument, Container) else argument
+            )
         self.lock = FileLock(self.data_dir / (self.dirname + ".lock"))
         self.dir = Path(data_dir) / self.dirname
 
     @property
     def dirname(self):
-        h = hashlib.sha1(json.dumps(self.arguments).encode()).hexdigest()
+        h = hashlib.sha1(yaml.safe_dump(self.arguments).encode()).hexdigest()
         return f"{self.dirprefix}_{h[:10]}"
 
     def prepare_data(self) -> None:
