@@ -162,6 +162,7 @@ def random_lines(
     img, points=200, links=2, intensity_range=(0, 256), weight_range=(1, 5)
 ):
     rng = np.random.default_rng()
+    links = min(points - 1, links)  # In case there are too few points
     p = rng.integers(low=(0, 0), high=img.shape, size=(points, 2))
     p = np.unique(p, axis=0)  # remove same points
     points = len(p)
