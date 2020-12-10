@@ -58,12 +58,13 @@ class DirectoryDataset(Dataset):
 
 class NumpyDataset(Dataset):
     def __init__(self, root_dir, dtypes):
+        self.root_dir = root_dir
         self.dtypes = dtypes
-        self.files = {}
+        self.files = None
         all_len = []
         for dtype in dtypes:
             data = np.load(root_dir / (dtype + ".npz"))
-            self.files[dtype] = data
+            # self.files[dtype] = data
             all_len.append(len(data.files))
 
         assert len(np.unique(all_len)) == 1, f"unequal number of images"
@@ -73,7 +74,16 @@ class NumpyDataset(Dataset):
     def __len__(self) -> int:
         return self.length
 
+    def initialize(self):
+        self.files = {}
+        for dtype in self.dtypes:
+            data = np.load(self.root_dir / (dtype + ".npz"))
+            self.files[dtype] = data
+
     def __getitem__(self, index: int):
+        # initialize file pointers inside each individual worker
+        if self.files is None:
+            self.initialize()
         return {
             dtype: self.files[dtype][self.files[dtype].files[index]]
             for dtype in self.dtypes
