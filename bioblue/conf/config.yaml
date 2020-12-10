@@ -4,7 +4,7 @@ defaults:
   - module: semantic_blurring
   - dataset: synthetic
   - logger: "mlflow"
-  - server: "???"
+  - server: "${host:}"
   - exp: test
 
 hydra:
@@ -13,4 +13,5 @@ hydra:
       AWS_ACCESS_KEY_ID: vjoosdtb
       AWS_SECRET_ACCESS_KEY: qsdfghjk
       MLFLOW_S3_ENDPOINT_URL: "http://betelgeuse.elen.ucl.ac.be:9000"
+      MLFLOW_TRACKING_URI: "http://betelgeuse.elen.ucl.ac.be:5000"
       MLFLOW_S3_IGNORE_TLS: "true"

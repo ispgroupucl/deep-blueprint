@@ -1,8 +1,5 @@
 # @package _global_
 exp: Kidneys
-defaults:
-  - model: conf_unet
-  - module: semantic_blurring
 module:
-  ssl: false
-dataset: kidneys
+  _target_: bioblue.module.ThresholdSegment
+  segmenter: ${model}
