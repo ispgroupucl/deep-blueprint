@@ -14,7 +14,7 @@
 update_git:
   script:
     - pwd
-    - ls
+    - ls -lah
 # test:
 #   script:
 #     - poetry run bioblue --version
