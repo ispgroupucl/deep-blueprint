@@ -1,11 +1,1 @@
-# @package _global_
-trainer:
-  gpus: 0
-  # fast_dev_run: true
-
-callbacks:
-  - _target_: bioblue.callback.MLFlowCallback
-    log_models: false
-  - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-    dirpath: "./models"
-    save_last: true
+/home/vjoosdeterb/projects/bio-blueprints/bioblue/conf/server/cynosura.yaml
