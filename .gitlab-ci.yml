@@ -8,13 +8,16 @@
 #     - .cache/pip
 #     - .cache/poetry
 
-# before_script:
-#   - cd $CECIHOME
+before_script:
+  - poetry install
 
 update_git:
   script:
     - pwd
     - ls -lah
+    - which python
+    - poetry run which python
+    - poetry env list
 # test:
 #   script:
 #     - poetry run bioblue --version
