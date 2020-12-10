@@ -7,7 +7,7 @@ authors = ["Victor Joos <victor.joos@uclouvain.be>"]
 [tool.poetry.dependencies]
 python = ">=3.6.1,<4.0"
 numpy = "^1.19"
-torch = "~1.6.0"
+torch = "~1.7.0"
 monai = { extras = ["gdown"], version = "^0.2.0" }
 gdown = "^3.11.1"
 nibabel = "^3.1.1"
@@ -24,7 +24,6 @@ hiplot = "^0.1.18"
 mlflow = "^1.10.0"
 optuna = "^2.0.0"
 hydra-submitit-launcher = "^1.0.0"
-rich = {extras = ["jupyter"], version = "^9.0.0"}
 rawpy = "^0.15.0"
 SimpleITK = "^2.0.1"
 plotly = "^4.12.0"
@@ -36,6 +35,7 @@ boto3 = "^1.16.25"
 gorilla = "^0.3.0"
 minio = "^6.0.2"
 filelock = "^3.0.12"
+ipyaggrid = "^0.2.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1"
