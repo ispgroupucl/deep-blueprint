@@ -1,4 +1,5 @@
 from .utils import *
 from .directory import *
 from .synthetic import *
-from .numpy import *
+from .downloadable import *
+from .thresholdable import *
