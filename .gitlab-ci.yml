@@ -15,6 +15,7 @@ before_script:
 
 print_help:
   script:
+    - poetry run bioblue --cfg all
     - poetry run bioblue --help
     - echo "done"
 
