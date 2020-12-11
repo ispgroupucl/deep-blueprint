@@ -10,6 +10,7 @@
 
 before_script:
   - poetry install
+  - which git
   - git --version
   - module list
 
