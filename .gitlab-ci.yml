@@ -11,7 +11,7 @@
 before_script:
   - poetry install
 
-update_git:
+test_help:
   script:
     - poetry run bioblue --help
 # test:
