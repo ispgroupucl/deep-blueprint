@@ -10,6 +10,7 @@
 
 before_script:
   - poetry install
+  - mkdir -p data
   # - ssh -o ExitOnForwardFailure=yes -f -N -L 9000:localhost:9000 betelgeuse
   # - ssh -o ExitOnForwardFailure=yes -f -N -L 5000:localhost:5000 betelgeuse
 

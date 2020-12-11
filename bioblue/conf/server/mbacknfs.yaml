@@ -7,6 +7,8 @@ callbacks:
     dirpath: "./models"
     save_last: true
 
+dataset:
+  data_dir: "${env:CI_PROJECT_DIR}/data"
 hydra:
   job:
     env_set:
