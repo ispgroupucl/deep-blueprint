@@ -1,7 +1,7 @@
 # @package _global_
 gpus: 0
 callbacks:
-  - _target: bioblue.callback.MLFlowCallback
+  - _target_: bioblue.callback.MLFlowCallback
     log_models: true
   - _target_: pytorch_lightning.callbacks.ModelCheckpoint
     dirpath: "./models"
