@@ -1,7 +1,7 @@
 __version__ = "0.1.0"
 
 from bioblue import dataset, transforms, model
-
+from bioblue import conf
 from omegaconf import OmegaConf
 import platform
 
@@ -12,4 +12,5 @@ __all__ = [
     "dataset",
     "transforms",
     "model",
+    "conf",
 ]
