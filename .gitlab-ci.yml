@@ -10,18 +10,10 @@
 
 before_script:
   - poetry install
-  - printenv
-  - which git
-  - git --version
-  - module list
 
 update_git:
   script:
-    - pwd
-    - ls -lah
-    - which python
-    - poetry run which python
-    - poetry env list
+    - poetry run bioblue --help
 # test:
 #   script:
 #     - poetry run bioblue --version
