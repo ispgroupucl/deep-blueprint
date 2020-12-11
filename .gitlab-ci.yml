@@ -22,5 +22,5 @@ print_help:
 
 test:
   script:
-    - poetry run bioblue exp=test
+    - poetry run bioblue exp=test hydra/launcher=submitit_slurm
     - echo "done"

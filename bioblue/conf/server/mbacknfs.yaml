@@ -15,9 +15,6 @@ hydra:
       MLFLOW_S3_ENDPOINT_URL: "http://localhost:9000"
       MLFLOW_TRACKING_URI: "http://localhost:5000"
   launcher:
-    _target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher
-    name: ${hydra.job.name}
-    submitit_folder: ${hydra.sweep.dir}/.submitit/%j
     timeout_min: 60
     cpus_per_task: 8
     gpus_per_node: 1
@@ -25,7 +22,4 @@ hydra:
     mem_gb: 16
     nodes: 1
     partition: gpu
-    signal_delay_s: 120
-    max_num_timeout: 0
-    additional_parameters: {}
     array_parallelism: 1
