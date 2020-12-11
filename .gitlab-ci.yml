@@ -16,7 +16,9 @@ before_script:
 print_help:
   script:
     - poetry run bioblue --help
+    - echo "done"
 
 test:
   script:
     - poetry run bioblue exp=test
+    - echo "done"
