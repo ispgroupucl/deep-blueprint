@@ -1,3 +1,4 @@
+# @package _global_
 gpus: 0
 callback:
   - _target: bioblue.callback.MLFlowCallback
