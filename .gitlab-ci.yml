@@ -19,4 +19,4 @@ print_help:
 
 test:
   script:
-    - poetry run bioblue env=test
+    - poetry run bioblue exp=test
