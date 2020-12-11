@@ -1,5 +1,6 @@
 import pytorch_lightning as pl
 import pytorch_lightning.metrics.functional as plF
+from pytorch_lightning.metrics.utils import to_categorical, to_onehot
 import torch
 import torch.nn.functional as F
 
@@ -45,7 +46,7 @@ class SemanticBlur(pl.LightningModule):
         self.log(
             "train_loss", loss, prog_bar=True, on_step=False, on_epoch=True, logger=True
         )
-        iou_val = plF.iou(plF.to_categorical(seg_hat), seg, num_classes=2)
+        iou_val = plF.iou(to_categorical(seg_hat), seg, num_classes=2)
         return dict(loss=loss, iou=iou_val)
 
     def training_epoch_end(self, outputs) -> None:
@@ -75,7 +76,7 @@ class SemanticBlur(pl.LightningModule):
         return dict(loss=loss, pred=seg_hat, target=seg)
 
     def validation_epoch_end(self, outputs) -> None:
-        preds = plF.to_categorical(torch.cat([tmp["pred"] for tmp in outputs]))
+        preds = to_categorical(torch.cat([tmp["pred"] for tmp in outputs]))
         targets = torch.cat([tmp["target"] for tmp in outputs])
 
         iou_val = plF.iou(preds, targets, num_classes=2)
