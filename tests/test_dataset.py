@@ -9,8 +9,11 @@ from pathlib import Path
 import bioblue as bb
 
 
-def test_md5_dir():
-    directory = "data/synthetic_test"
+def test_md5_dir(tmp_path):
+    dataset_name = "test_dataset"
+    dm = dataset.DownloadableDataModule(data_dir=tmp_path, directory=dataset_name)
+    dm.prepare_data()
+    directory = tmp_path / dataset_name
     run1 = dataset.md5_dir(directory)
     run2 = dataset.md5_dir(directory)
     assert run1 == run2
