@@ -9,14 +9,33 @@ from pathlib import Path
 import bioblue as bb
 
 
-def test_md5_dir(tmp_path):
+@pytest.fixture(scope="session")
+def dataset_path(tmp_path_factory):
+    tmp_path = tmp_path_factory.mktemp("data-")
     dataset_name = "test_dataset"
     dm = dataset.DownloadableDataModule(data_dir=tmp_path, directory=dataset_name)
     dm.prepare_data()
-    directory = tmp_path / dataset_name
-    run1 = dataset.md5_dir(directory)
-    run2 = dataset.md5_dir(directory)
+    return tmp_path / dataset_name
+
+
+def test_md5_dir(dataset_path):
+    run1 = dataset.md5_dir(dataset_path)
+    run2 = dataset.md5_dir(dataset_path)
     assert run1 == run2
+
+
+def test_thresholdable_dm(dataset_path):
+    dm = dataset.ThresholdableDataModule(
+        data_dir=dataset_path.parent, directory=dataset_path.name
+    )
+    dm.prepare_data()
+    dm.setup()
+    segms_sum = []
+    for _ in range(10):
+        segms_sum.append(np.sum(dm.train[0]["segmentation"]))
+
+    print(segms_sum)
+    assert len(set(segms_sum)) > 1
 
 
 @pytest.mark.parametrize(
