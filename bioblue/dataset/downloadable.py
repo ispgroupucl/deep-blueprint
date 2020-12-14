@@ -48,11 +48,10 @@ class DownloadableDataModule(pl.LightningDataModule):
                     log.warn("There is no hashfile on the server.")
                     return
                 try:
-                    server_dirhash = response.read(decode_content=True).strip()
+                    server_dirhash = response.read(decode_content=True).decode().strip()
                 finally:
                     response.close()
                     response.release_conn()
-                print(dirhash, server_dirhash)
                 if dirhash == server_dirhash:
                     return
                 else:

@@ -16,9 +16,11 @@ def test_md5_dir():
     assert run1 == run2
 
 
-def test_downloadable_datamodule(tmp_path):
+@pytest.mark.parametrize(
+    "dataset_name", ["test_dataset", pytest.param("kidneys", marks=pytest.mark.slow)],
+)
+def test_downloadable_datamodule(tmp_path, dataset_name):
     print(tmp_path)
-    dataset_name = "test_dataset"
     dm = dataset.DownloadableDataModule(data_dir=tmp_path, directory=dataset_name)
     dm.prepare_data()
     dm.setup()
@@ -26,3 +28,6 @@ def test_downloadable_datamodule(tmp_path):
     dm.prepare_data()
     dm.setup()
     assert "image" in dm.train[0]
+
+
+# def test_failing_downloadable_datamodule(tmp_path):
