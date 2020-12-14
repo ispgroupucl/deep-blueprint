@@ -14,12 +14,12 @@ hydra:
     env_set:
       MLFLOW_S3_ENDPOINT_URL: "http://localhost:9000"
       MLFLOW_TRACKING_URI: "http://localhost:5000"
-  launcher:
-    timeout_min: 60
-    cpus_per_task: 8
-    gpus_per_node: 1
-    tasks_per_node: 1
-    mem_gb: 16
-    nodes: 1
-    partition: gpu
-    array_parallelism: 1
+  # launcher:
+  #   timeout_min: 60
+  #   cpus_per_task: 8
+  #   gpus_per_node: 1
+  #   tasks_per_node: 1
+  #   mem_gb: 16
+  #   nodes: 1
+  #   partition: gpu
+  #   array_parallelism: 1

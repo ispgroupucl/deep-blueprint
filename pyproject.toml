@@ -36,6 +36,7 @@ gorilla = "^0.3.0"
 minio = "^6.0.2"
 filelock = "^3.0.12"
 ipyaggrid = "^0.2.1"
+Jinja2 = "^2.11.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1"
