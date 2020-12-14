@@ -19,7 +19,7 @@ print_help:
     - poetry run bioblue --cfg all
     - poetry run bioblue --help
     - echo "done"
-# test:
-#   script:
-#     - poetry run bioblue -m exp=test
-#     - echo "done"
+test:
+  script:
+    - poetry run pytest tests/test_dataset.py --longrun
+    - echo "done"
