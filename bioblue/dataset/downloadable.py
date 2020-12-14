@@ -35,7 +35,7 @@ class DownloadableDataModule(pl.LightningDataModule):
                 secure=False,
             )
             objects = mclient.list_objects_v2(
-                "data", prefix=self.directory, recursive=True
+                "data", prefix=self.directory+"/", recursive=True
             )
             for obj in objects:
                 local_path = self.dir / obj.object_name.split("/", 1)[1]
