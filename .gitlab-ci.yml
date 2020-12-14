@@ -21,5 +21,5 @@ print_help:
     - echo "done"
 test:
   script:
-    - poetry run pytest tests/test_dataset.py --longrun
+    - poetry run pytest tests/test_dataset.py --longrun --basetemp=./pytemp
     - echo "done"
