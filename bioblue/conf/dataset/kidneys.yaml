@@ -4,3 +4,5 @@ data_dir: "${env:HOME}/projects/bio-blueprints/data"
 directory: "kidneys"
 batch_size: 4
 num_workers: 12
+threshold_mean: 0.999
+threshold_std: 0.001
