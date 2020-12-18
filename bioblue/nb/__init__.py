@@ -25,8 +25,8 @@ import pytorch_lightning as pl
 
 import bioblue as bb
 
-from bioblue.nb.image_display import MultiImageDisplay
-
+from bioblue.nb.image_display import MultiImageDisplay, myshow, myshow3d
+from bioblue.nb.load import load_from_cfg, load_from_runid
 
 # Initialize environment variables
 with init_hydra(config_module="bioblue.conf"):
