@@ -47,6 +47,7 @@ ipympl = "^0.5.7"
 black = "^19.10b0"
 jupyterlab-git = "^0.22.2"
 mypy = "^0.790"
+kaggle = "^1.5.10"
 
 [tool.poetry.scripts]
 bioblue = 'bioblue.train:main'
