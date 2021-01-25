@@ -38,6 +38,7 @@ filelock = "^3.0.12"
 ipyaggrid = "^0.2.1"
 Jinja2 = "^2.11.2"
 batchgenerators = "^0.21"
+SharedArray = "^3.2.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1"
