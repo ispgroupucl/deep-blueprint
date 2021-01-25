@@ -1,7 +1,9 @@
+from bioblue.utils.gpu import pick_gpu
 import hydra
 from omegaconf import DictConfig, OmegaConf
 import torch
 import bioblue.conf
+from bioblue.utils import pick_gpu
 from hydra.utils import call, instantiate
 from hydra.core.config_store import ConfigStore
 import pytorch_lightning as pl
@@ -18,6 +20,10 @@ def main(cfg: DictConfig) -> None:
         callback = instantiate(callback)
         callback.cfg = cfg  # FIXME : ugly hack
         callbacks.append(callback)
+
+    if isinstance(cfg.trainer.gpus, int):
+        cfg.trainer.gpus = pick_gpu(cfg.trainer.gpus)
+
     trainer = instantiate(
         cfg.trainer, logger=logger, default_root_dir=".", callbacks=callbacks
     )
