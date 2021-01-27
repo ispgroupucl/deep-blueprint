@@ -4,6 +4,8 @@ mlruns/
 
 # Data directory
 data/
+artifacts/
+tmp/
 
 ## Project ignores
 .vscode/
