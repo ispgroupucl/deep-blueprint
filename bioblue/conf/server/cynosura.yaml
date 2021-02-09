@@ -1,7 +1,8 @@
 # @package _global_
 trainer:
-  gpus: 0
+  gpus: ${gpus}
   # fast_dev_run: true
+gpus: "???"
 
 callbacks:
   - _target_: bioblue.callback.MLFlowCallback
