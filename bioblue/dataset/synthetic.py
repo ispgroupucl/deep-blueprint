@@ -1,6 +1,8 @@
+from typing import Dict, Mapping, Tuple
 from bioblue.dataset.utils import NumpyDataset
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
+from scipy.ndimage.filters import gaussian_filter
 from skimage import draw
 from pathlib import Path
 from tqdm import tqdm
@@ -15,47 +17,63 @@ import pytorch_lightning as pl
 from pytorch_lightning.utilities.parsing import get_init_args
 import inspect
 from omegaconf import Container
-
+from hydra.utils import call
+from functools import partial
+from hydra._internal.utils import _locate
 
 log = logging.getLogger(__name__)
 
 
 class SyntheticDataModule(pl.LightningDataModule):
+    """ Module for creating a synthetic datamodule.
+    
+    """
+
     def __init__(
         self,
-        shape=(512, 512),
-        train_size=50,
-        val_size=50,
-        test_size=50,
+        shape: Tuple[int, int] = (512, 512),
+        train_size: int = 50,
+        val_size: int = 50,
+        test_size: int = 50,
         data_dir: str = "./data",
         directory: str = "synthetic",
-        batch_size=2,
-        num_workers=1,
-        points_range=(20, 21),
-        links_range=(3, 4),
-        max_shapes=1000,
-        size_range=(50, 500),
-        weight_range=(1, 5),
-        bg_intensity_range=(0, 50),
-        fg_intensity_range=(0, 256),
+        batch_size: int = 2,
+        num_workers: int = 1,
+        image_creator: Mapping = None,
+        points_range=(20, 21),  # DEPRECATED
+        links_range=(3, 4),  # DEPRECATED
+        max_shapes=1000,  # DEPRECATED
+        size_range=(50, 500),  # DEPRECATED
+        weight_range=(1, 5),  # DEPRECATED
+        bg_intensity_range=(0, 50),  # DEPRECATED
+        fg_intensity_range=(0, 256),  # DEPRECATED
     ):
         super().__init__()
         self.sizes = dict(train=train_size, val=val_size, test=test_size)
         self.data_dir = Path(data_dir)
         self.dirprefix = directory
-        self.shape = shape
+        self.shape = tuple(shape)
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.parameters = (
-            tuple(shape),
-            tuple(points_range),
-            tuple(links_range),
-            max_shapes,
-            tuple(size_range),
-            tuple(weight_range),
-            tuple(bg_intensity_range),
-            tuple(fg_intensity_range),
-        )
+        if image_creator is not None:
+            target = _locate(image_creator.pop("_target_"))
+            image_creator["shape"] = tuple(shape)
+            self.image_creator = partial(target, **image_creator)
+        else:
+            parameters = (
+                tuple(shape),
+                tuple(points_range),
+                tuple(links_range),
+                max_shapes,
+                tuple(size_range),
+                tuple(weight_range),
+                tuple(bg_intensity_range),
+                tuple(fg_intensity_range),
+            )
+            self.image_creator = partial(create_image, *parameters)
+            log.warn(
+                "You should pass the function you want to call explicitly using image_creator"
+            )
         # TODO : find solution to this mess
         self.arguments = get_init_args(inspect.currentframe())
         for name, argument in self.arguments.items():
@@ -81,9 +99,9 @@ class SyntheticDataModule(pl.LightningDataModule):
                 log.info(f"Creating {name}")
                 imgs = []
                 segms = []
-                parameters = size * [self.parameters]
+                parameters = size * [()]
                 with mp.Pool(12) as pool:
-                    results = pool.starmap(create_image, parameters)
+                    results = pool.starmap(self.image_creator, parameters)
                 imgs = [x[0] for x in results]
                 segms = [x[1] for x in results]
                 (self.dir / name).mkdir()
@@ -119,6 +137,46 @@ def create_random_image(shape):
     return cimg, segm
 
 
+def create_shapes(
+    shape: Tuple[int, int],
+    foreground_params: Mapping = None,
+    background_params: Mapping = None,
+    uniform_background=True,
+    blur_sigma=10,
+):
+    rng = np.random.default_rng()
+    img = np.zeros(shape)
+    if not uniform_background:
+        img, _ = random_objects(img, **background_params)
+        img = gaussian_filter(img, sigma=blur_sigma)
+    else:
+        img[:] = rng.integers(0, 128)
+
+    img, segm = random_objects(img, **foreground_params)
+
+    return img, segm
+
+
+def create_lines(
+    shape: Tuple[int, int],
+    foreground_params: Mapping = None,
+    background_params: Mapping = None,
+    uniform_background=True,
+    blur_sigma=10,
+) -> Tuple[np.array, np.array]:
+    rng = np.random.default_rng()
+    img = np.zeros(shape)
+    if not uniform_background:
+        img, _ = random_objects(img, **background_params)
+        img = gaussian_filter(img, sigma=blur_sigma)
+    else:
+        img[:] = rng.integers(0, 128)
+
+    img, segm = random_lines(img, **foreground_params)
+
+    return img, segm
+
+
 def create_image(
     shape,
     points_range=(20, 21),
@@ -133,7 +191,7 @@ def create_image(
     points = rng.integers(*points_range)
     links = rng.integers(*links_range)
     img = np.zeros(shape)
-    background = random_objects(img, max_shapes, *size_range, bg_intensity_range)
+    background, _ = random_objects(img, max_shapes, *size_range, bg_intensity_range)
     cimg, segm = random_lines(
         background, points, links, fg_intensity_range, weight_range
     )
@@ -142,26 +200,46 @@ def create_image(
 
 
 def random_objects(
-    img, max_shapes=1000, min_size=50, max_size=500, intensity_range=(0, 50)
+    img,
+    max_shapes=1000,
+    min_size=50,
+    max_size=500,
+    intensity_range=(0, 50),
+    min_shapes=1,
+    allow_overlap=True,
 ):
-    drawing, mask = draw.random_shapes(
+    drawing, _ = draw.random_shapes(
         img.shape,
+        min_shapes=min_shapes,
         max_shapes=max_shapes,
         min_size=min_size,
         max_size=max_size,
         multichannel=False,
         intensity_range=intensity_range,
-        allow_overlap=True,
+        allow_overlap=allow_overlap,
         num_trials=1000,
     )
-    drawing[drawing == 255] = 0
-    return drawing
+    # drawing[drawing == 255] = 0
+    img[drawing != 255] = drawing[drawing != 255]
+    mask = np.zeros_like(img)
+    mask[drawing != 255] = 1
+    return img, mask
 
 
 def random_lines(
-    img, points=200, links=2, intensity_range=(0, 256), weight_range=(1, 5)
+    img,
+    points=200,
+    links=2,
+    intensity_range=(0, 256),
+    weight_range=(1, 5),
+    points_range=None,
+    links_range=None,
 ):
     rng = np.random.default_rng()
+    if points_range is not None:
+        points = rng.integers(*points_range)
+    if links_range is not None:
+        links = rng.integers(*links_range)
     links = min(points - 1, links)  # In case there are too few points
     p = rng.integers(low=(0, 0), high=img.shape, size=(points, 2))
     p = np.unique(p, axis=0)  # remove same points
