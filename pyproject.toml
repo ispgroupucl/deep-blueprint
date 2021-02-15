@@ -41,11 +41,12 @@ batchgenerators = "^0.21"
 SharedArray = "^3.2.1"
 typer = "^0.3.2"
 jedi = "<0.18.0"
+ipywebrtc = "^0.5.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1"
 hypothesis = {extras = ["numpy"], version = "^5.41.2"}
-jupyterlab = "^3.0.5"
+jupyterlab = "<3.0.0"
 ipympl = "^0.5.7"
 black = "^19.10b0"
 jupyterlab-git = "^0.22.2"
