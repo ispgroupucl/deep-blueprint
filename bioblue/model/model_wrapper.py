@@ -1,3 +1,4 @@
+from typing import Sequence
 import warnings
 from .blocks import get_last_act, create_cba
 
@@ -24,7 +25,8 @@ class ModelWrapper(nn.Module):
         # Default input-output formats
         if input_format is None:
             input_format = ["image"]
-        if type(input_format) is not list:
+
+        if not isinstance(input_format, Sequence):
             input_format = [input_format]
         inf = [x.split("_") for x in input_format]
         self.input_format_sizes = []

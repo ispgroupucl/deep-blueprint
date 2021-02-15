@@ -2,9 +2,12 @@ from torch.utils.data import Dataset
 from pathlib import Path
 from cachetools import cached
 from cachetools.keys import hashkey
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import nibabel
+import logging
 import numpy as np
+
+log = logging.getLogger(__name__)
 
 
 def read_sample(samplefiles=None, **kwargs):
@@ -54,6 +57,61 @@ class DirectoryDataset(Dataset):
     def __getitem__(self, idx):
         result = read_sample(self.fname_samples[idx])
         return result
+
+
+class MultipleNumpyDataset(Dataset):
+    def __init__(self, root_dir, dtypes) -> None:
+        super().__init__()
+        self.root_dir = Path(root_dir)
+        self.dtypes = dtypes
+        self.data = None
+        self.files = []
+        self.reverse_index = None
+        self.array_index = None
+        all_len = []
+        for dtype in dtypes:
+            dtype_len = 0
+            for file in sorted((self.root_dir / dtype).iterdir()):
+                if dtype == dtypes[0]:
+                    self.files.append(file.name)
+                data = np.load(file)
+                dtype_len += len(data.files)
+            all_len.append(dtype_len)
+
+        assert len(np.unique(all_len)) == 1, "unequal number of images"
+
+    def __len__(self) -> int:
+        length = 0
+        for file in self.files:
+            data = np.load(self.root_dir / self.dtypes[0] / file)
+            length += len(data.files)
+        return length
+
+    def initialize(self):
+        self.reverse_index = defaultdict(list)
+        self.array_index = defaultdict(list)
+        self.data = defaultdict(list)
+        for dtype in self.dtypes:
+            for i, filename in enumerate(self.files):
+                file = self.root_dir / dtype / filename
+                data = np.load(file)
+                for j in range(len(data)):
+                    self.reverse_index[dtype].append(i)
+                    self.array_index[dtype].append(j)
+                self.data[dtype].append(data)
+
+    def __getitem__(self, index: int):
+        if self.data is None:
+            self.initialize()
+
+        sample = {}
+        for dtype in self.dtypes:
+            file_index = self.reverse_index[dtype][index]
+            array_index = self.array_index[dtype][index]
+            array_name = self.data[dtype][file_index].files[array_index]
+            sample[dtype] = self.data[dtype][file_index][array_name]
+
+        return sample
 
 
 class NumpyDataset(Dataset):

@@ -1,0 +1,22 @@
+# @package _global_
+exp: MIP
+dataset:
+  _target_: bioblue.dataset.BioblueDataModule
+  data_dir: "${env:HOME}/projects/bio-blueprints/data/hepaticvessel"
+  train_dataset:
+    _target_: bioblue.dataset.MultipleNumpyDataset
+    root_dir: "${dataset.data_dir}/train"
+    dtypes: ["image", "mip-image", "segmentation"]
+  val_dataset: ${dataset.train_dataset}
+  test_dataset: ${dataset.train_dataset}
+  strategies:
+    - _target_: bioblue.dataset.MIPStrategy
+      source_dtype: image
+      dtype_prefix: mip
+      size: 5
+    - _target_: bioblue.dataset.KFoldStrategy
+      fold: ${fold}
+      folds: 5
+model:
+  input_format: ["image", "mip-image"]
+fold: "???"

@@ -36,7 +36,6 @@ class ConfUnet(ModelWrapper):
     ):
         if hasattr(model_cfg, "_target_"):
             model_cfg = instantiate(model_cfg)
-
         super().__init__(
             model_cfg=model_cfg,
             classes=classes,

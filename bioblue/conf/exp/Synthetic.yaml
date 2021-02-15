@@ -6,3 +6,4 @@ dataset:
   points_range: [5, 21]
   links_range: [2, 4]
   weight_range: [1, 10]
+  train_size: 500
