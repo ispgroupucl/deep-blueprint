@@ -6,6 +6,7 @@ defaults:
   - logger: "mlflow"
   - server: "${host:}"
   - exp: test
+  - hydra/launcher: gpu
 
 hydra:
   job:

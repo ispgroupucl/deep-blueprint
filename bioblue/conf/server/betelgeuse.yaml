@@ -10,3 +10,7 @@ callbacks:
   - _target_: pytorch_lightning.callbacks.ModelCheckpoint
     dirpath: "./models"
     save_last: true
+    monitor: val_meaniou
+    mode: max
+    filename: "{epoch}-{val_meaniou:.2f}"
+  - _target_: "pytorch_lightning.callbacks.LearningRateMonitor"

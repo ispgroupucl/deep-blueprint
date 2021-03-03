@@ -1,4 +1,5 @@
 from bioblue.utils.gpu import pick_gpu
+import mlflow
 import hydra
 from omegaconf import DictConfig, OmegaConf
 import torch
@@ -24,11 +25,12 @@ def main(cfg: DictConfig) -> None:
     if isinstance(cfg.trainer.gpus, int):
         cfg.trainer.gpus = pick_gpu(cfg.trainer.gpus)
 
-    trainer = instantiate(
+    trainer: pl.Trainer = instantiate(
         cfg.trainer, logger=logger, default_root_dir=".", callbacks=callbacks
     )
     trainer.tune(module, datamodule=datamodule)
     trainer.fit(module, datamodule=datamodule)
+    return {key: value.item() for key, value in trainer.callback_metrics.items()}
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional, Tuple
 from hydra.utils import instantiate
+from hydra.experimental import initialize_config_module as init_hydra, compose
 from mlflow.tracking.client import MlflowClient
 from omegaconf import OmegaConf, DictConfig
 import mlflow
@@ -43,3 +44,13 @@ def load_from_cfg(cfg: DictConfig) -> Tuple[pl.LightningModule, pl.LightningData
     module = instantiate(cfg.module)
 
     return module, datamodule
+
+
+def load_from_overrides(overrides=[]) -> Tuple:
+    with init_hydra(config_module="bioblue.conf"):
+        cfg = compose(config_name="config", overrides=overrides)
+
+    datamodule = instantiate(cfg.dataset)
+    module = instantiate(cfg.module)
+
+    return cfg, module, datamodule

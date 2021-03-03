@@ -110,7 +110,7 @@ def test_weighted_line():
 
 def test_lines():
     img = np.zeros((512, 512))
-    img = bb.dataset.random_objects(img)
+    img, _ = bb.dataset.random_objects(img)
     img, seg = bb.dataset.random_lines(img)
     plt.imshow(img)
     plt.colorbar()

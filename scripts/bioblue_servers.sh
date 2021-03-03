@@ -5,8 +5,8 @@ export AK=vjoosdtb
 export SK=qsdfghjk
 export MINIO_ACCESS_KEY=$AK
 export MINIO_SECRET_KEY=$SK
-
-source /home/vjoosdeterbe/.cache/pypoetry/virtualenvs/bioblue-wqkgZuJr-py3.7/bin/activate
+PYTHON_ENV=$(poetry env info --path)
+source ${PYTHON_ENV}/bin/activate # /home/vjoosdeterbe/.cache/pypoetry/virtualenvs/bioblue-wqkgZuJr-py3.7/bin/activate
 
 DIRECTORY=/data/workdir/vjoosdeterbe/bio-blueprints
 

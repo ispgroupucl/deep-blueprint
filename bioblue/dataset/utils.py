@@ -60,8 +60,9 @@ class DirectoryDataset(Dataset):
 
 
 class MultipleNumpyDataset(Dataset):
-    def __init__(self, root_dir, dtypes) -> None:
+    def __init__(self, root_dir, dtypes, transforms=None) -> None:
         super().__init__()
+        self.transforms = transforms
         self.root_dir = Path(root_dir)
         self.dtypes = dtypes
         self.data = None
