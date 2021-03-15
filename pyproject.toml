@@ -45,6 +45,7 @@ ipywebrtc = "^0.5.0"
 kornia = "^0.4.1"
 albumentations = "^0.5.2"
 dill = "^0.3.3"
+torchmetrics = "^0.2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1"
