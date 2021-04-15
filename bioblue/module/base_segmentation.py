@@ -2,6 +2,7 @@ import io
 from typing import Any, List
 import pytorch_lightning as pl
 import pytorch_lightning.metrics.functional as plF
+from pytorch_lightning.core.decorators import auto_move_data
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -28,6 +29,7 @@ class BaseSegment(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.input_format = segmenter["input_format"]
+        self.output_format = segmenter["output_format"]
         if hasattr(segmenter, "_target_"):
             segmenter = instantiate(segmenter)
         if class_weights is not None:
@@ -43,9 +45,10 @@ class BaseSegment(pl.LightningModule):
             self.iou[f"{set}_bg"] = IoU(num_classes=2, class_index=0)
             self.iou[f"{set}_fg"] = IoU(num_classes=2, class_index=1)
 
+    @auto_move_data
     def forward(self, x):
         for dtype in x:
-            x[dtype] = x[dtype].unsqueeze(1)
+            x[dtype] = x[dtype].unsqueeze(1).to(torch.float)
         seg = self.segmenter(x)[0]
 
         return seg
@@ -67,9 +70,10 @@ class BaseSegment(pl.LightningModule):
         for name, iou in self.iou.items():
             if "train" not in name:
                 continue
-            iou(seg_hat, seg)
+            iou(F.softmax(seg_hat, dim=1), seg)
             progbar = name == "train_mean"
-            self.log(f"{name}iou", iou, prog_bar=progbar)
+            self.log(f"{name}iou", iou, on_step=False, on_epoch=True, prog_bar=False)
+            self.log(f"{name}iou_step", iou, prog_bar=progbar)
         return dict(loss=loss)
 
     def validation_step(self, batch, batch_idx):
@@ -79,7 +83,7 @@ class BaseSegment(pl.LightningModule):
         for name, iou in self.iou.items():
             if "val" not in name:
                 continue
-            iou(seg_hat, seg)
+            iou(F.softmax(seg_hat, dim=1), seg)
             progbar = name == "val_mean"
             self.log(f"{name}iou", iou, prog_bar=progbar)
         return dict(loss=loss)

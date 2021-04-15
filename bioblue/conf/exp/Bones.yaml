@@ -4,7 +4,7 @@ dataset:
   _target_: bioblue.dataset.BioblueDataModule
   train_dataset:
     _target_: bioblue.dataset.MultipleNumpyDataset
-    partition: "train"
+    root_dir: "${dataset.data_dir}/train"
     dtypes: ["image", "mip-image", "segmentation"]
   val_dataset: ${dataset.train_dataset}
   test_dataset: ${dataset.train_dataset}

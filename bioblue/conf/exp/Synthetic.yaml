@@ -7,3 +7,13 @@ dataset:
   links_range: [2, 4]
   weight_range: [1, 10]
   train_size: 500
+callbacks:
+  - _target_: bioblue.callback.MLFlowCallback
+    log_models: true
+  - _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    dirpath: "./models"
+    save_last: true
+    monitor: val_meaniou
+    mode: max
+    filename: "{epoch}-{val_meaniou:.2f}"
+  - _target_: "pytorch_lightning.callbacks.LearningRateMonitor"

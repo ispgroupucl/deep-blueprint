@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import SimpleITK as sitk
 from tqdm.notebook import tqdm
-from itkwidgets import view
+from itkwidgets import view, compare
 import cv2
 import ipywidgets as widgets
 import os

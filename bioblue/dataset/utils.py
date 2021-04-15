@@ -1,11 +1,14 @@
+from numpy.lib.function_base import interp
 from bioblue.dataset.transform.pipelines import Compose
 import collections
+import zipfile
 from functools import partial
 from torch.utils.data import Dataset
 from pathlib import Path
 from cachetools import cached
 from cachetools.keys import hashkey
 from collections import namedtuple, defaultdict
+from skimage.util import view_as_windows
 import nibabel
 import logging
 import numpy as np
@@ -81,7 +84,9 @@ class MultipleNumpyDataset(Dataset):
     
     """
 
-    def __init__(self, root_dir, partition, dtypes, transforms=None) -> None:
+    def __init__(
+        self, root_dir, partition, dtypes, transforms=None, remove_start=0, remove_end=0
+    ) -> None:
         super().__init__()
         if isinstance(transforms, collections.Mapping):
             transforms = partial(call, config=transforms)
@@ -97,6 +102,9 @@ class MultipleNumpyDataset(Dataset):
         self.files = []
         self.reverse_index = None
         self.array_index = None
+        self.original_shape = None
+        self.remove_start = remove_start
+        self.remove_end = remove_end
         all_len = []
         for dtype in dtypes:
             dtype_len = 0
@@ -104,7 +112,9 @@ class MultipleNumpyDataset(Dataset):
                 if dtype == dtypes[0]:
                     self.files.append(file.name)
                 data = np.load(file)
-                dtype_len += len(data.files)
+                dtype_len += len(
+                    data.files[self.remove_start : len(data) - self.remove_end]
+                )
             all_len.append(dtype_len)
 
         assert len(np.unique(all_len)) == 1, "unequal number of images"
@@ -113,21 +123,23 @@ class MultipleNumpyDataset(Dataset):
         length = 0
         for file in self.files:
             data = np.load(self.root_dir / self.dtypes[0] / file)
-            length += len(data.files)
+            length += len(data.files[self.remove_start : len(data) - self.remove_end])
         return length
 
     def initialize(self):
         self.reverse_index = defaultdict(list)
         self.array_index = defaultdict(list)
         self.data = defaultdict(list)
+        self.original_shape = defaultdict(list)
         for dtype in self.dtypes:
             for i, filename in enumerate(self.files):
                 file = self.root_dir / dtype / filename
                 data = np.load(file)
-                for j in range(len(data)):
+                for j in range(self.remove_start, len(data) - self.remove_end):
                     self.reverse_index[dtype].append(i)
                     self.array_index[dtype].append(j)
                 self.data[dtype].append(data)
+                self.original_shape[dtype].append(data[data.files[0]].shape)
 
     def reset(self):
         for _, data in self.data.items():
@@ -143,6 +155,12 @@ class MultipleNumpyDataset(Dataset):
             self.initialize()
 
         sample = {}
+        log.debug(
+            "idx: %d; file: %d; array: %d",
+            index,
+            self.reverse_index["image"][index],
+            self.array_index["image"][index],
+        )
         for dtype in self.dtypes:
             file_index = self.reverse_index[dtype][index]
             array_index = self.array_index[dtype][index]
@@ -193,6 +211,8 @@ def preprocess(
     sample_dirs,
     prefix="_",
     resize=(512, 512),
+    crop=None,
+    stride=None,
     partition="train",
     split=1,
     output_name=None,
@@ -205,47 +225,57 @@ def preprocess(
     for name, (img_dir, seg_dir) in sample_dirs.items():
         print(name)
         log.info(f"processing {name}.")
-        output_image = []
-        output_seg = []
-        for i, img_file in enumerate(tqdm(sorted((dataset_dir / img_dir).iterdir()))):
-            if not img_file.suffix == file_suffix:
-                continue
-            suffix = img_file.name.rsplit(prefix, 1)[1]
-            image = cv2.imread(str(img_file), cv2.IMREAD_GRAYSCALE)
-            image = image.astype(np.uint8)
-            if resize:
-                image = cv2.resize(image, resize, interpolation=cv2.INTER_CUBIC)
-            if seg_dir is not None:
-                seg_files = list((dataset_dir / seg_dir).glob(f"*{suffix}"))
-                assert len(seg_files) == 1
-                seg_file = seg_files[0]
-                seg = cv2.imread(str(seg_file), cv2.IMREAD_GRAYSCALE)
-                if resize:
-                    seg = cv2.resize(seg, resize, interpolation=cv2.INTER_NEAREST)
-                if np.max(seg) != 1:
-                    seg[seg == np.max(seg)] = 1
-                output_seg.append(seg)
-            output_image.append(image)
-        output_segs = np.array_split(output_seg, split)
-        output_images = np.array_split(output_image, split)
-        if seg_dir is None:
-            image_dir = output_dir / output_name / partition / "image"
-        else:
-            image_dir = output_dir / output_name / partition / "image"
-            seg_dir = output_dir / output_name / partition / "segmentation"
-            seg_dir.mkdir(parents=True, exist_ok=True)
-            start = 0
-            for output_seg in output_segs:
-                np.savez_compressed(
-                    seg_dir / f"{name}_{start}-{start+len(output_seg)-1}.npz",
-                    *output_seg,
-                )
-                start += len(output_seg)
-        image_dir.mkdir(parents=True, exist_ok=True)
+        img_files = list(sorted((dataset_dir / img_dir).iterdir()))
+        img_files = [f for f in img_files if f.suffix == file_suffix]
+        test_img = cv2.imread(img_files[0], cv2.IMREAD_GRAYSCALE)
+        original_shape = test_img.shape
+        test_img = view_as_windows(test_img, crop, step=stride)
+        split_img_files = np.array_split(img_files, split)
         start = 0
-        for output_image in output_images:
-            np.savez_compressed(
-                image_dir / f"{name}_{start}-{start+len(output_image)-1}.npz",
-                *output_image,
+        out_img_dir = output_dir / output_name / partition / "image"
+        out_img_dir.mkdir(parents=True, exist_ok=True)
+        if seg_dir is not None:
+            out_seg_dir = output_dir / output_name / partition / "segmentation"
+            out_seg_dir.mkdir(parents=True, exist_ok=True)
+        for img_files in split_img_files:
+            img_filename = out_img_dir / f"{name}_{start}-{start+len(img_files)-1}.npz"
+            start += len(img_files)
+            img_zipf = zipfile.ZipFile(
+                img_filename,
+                mode="w",
+                compression=zipfile.ZIP_DEFLATED,
+                allowZip64=True,
             )
-            start += len(output_image)
+            if seg_dir is not None:
+                seg_filename = (
+                    out_seg_dir / f"{name}_{start}-{start+len(img_files)-1}.npz"
+                )
+                seg_zipf = zipfile.ZipFile(
+                    seg_filename,
+                    mode="w",
+                    compression=zipfile.ZIP_DEFLATED,
+                    allowZip64=True,
+                )
+            for i, img_file in enumerate(tqdm(img_files)):
+                suffix = img_file.name.rsplit(prefix, 1)[1]
+                image = cv2.imread(str(img_file), cv2.IMREAD_GRAYSCALE)
+                image = image.astype(np.uint8)
+                if resize:
+                    image = cv2.resize(image, resize, interpolation=cv2.INTER_CUBIC)
+                with img_zipf.open(f"arr_{i}.npy", "w", force_zip64=True) as fid:
+                    np.lib.format.write_array(fid, image)
+
+                if seg_dir is not None:
+                    seg_files = list((dataset_dir / seg_dir).glob(f"*{suffix}"))
+                    assert len(seg_files) == 1
+                    seg_file = seg_files[0]
+                    seg = cv2.imread(str(seg_file), cv2.IMREAD_GRAYSCALE)
+                    if resize:
+                        seg = cv2.resize(seg, resize, interpolation=cv2.INTER_NEAREST)
+                    if np.max(seg) != 1:
+                        seg[seg == np.max(seg)] = 1
+                    with seg_zipf.open(f"arr_{i}.npy", "w", force_zip64=True) as fid:
+                        np.lib.format.write_array(fid, seg)
+            img_zipf.close()
+            if seg_dir is not None:
+                seg_zipf.close()

@@ -7,7 +7,7 @@ authors = ["Victor Joos <victor.joos@uclouvain.be>"]
 [tool.poetry.dependencies]
 python = ">=3.6.2,<3.10"
 numpy = "^1.19"
-torch = "^1.7.0"
+torch = "1.7.1"
 monai = { extras = ["gdown"], version = "^0.2.0" }
 gdown = "^3.11.1"
 nibabel = "^3.1.1"
@@ -64,9 +64,13 @@ bioblue = 'bioblue.train:main'
 name = "forge"
 url = "https://forge.uclouvain.be/api/v4/projects/1124/packages/pypi"
 
+# [[tool.poetry.source]]
+# name = "pytorch"
+# url = "https://eternalphane.github.io/pytorch-pypi/"
+
 [tool.pytest.ini_options]
 log_cli = true
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

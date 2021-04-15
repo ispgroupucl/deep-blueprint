@@ -1,3 +1,4 @@
+from typing import Mapping
 from bioblue.utils.gpu import pick_gpu
 import mlflow
 import hydra
@@ -17,6 +18,8 @@ def main(cfg: DictConfig) -> None:
     module = instantiate(cfg.module)
     logger = instantiate(cfg.logger)
     callbacks = []
+    if isinstance(cfg.callbacks, Mapping):
+        cfg.callbacks = [cb for cb in cfg.callbacks.values()]
     for callback in cfg.callbacks:
         callback = instantiate(callback)
         callback.cfg = cfg  # FIXME : ugly hack

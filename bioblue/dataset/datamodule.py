@@ -1,44 +1,53 @@
+import logging
 from pathlib import Path
-from typing import List, Optional, Type
+from typing import Dict, List, Optional, Type
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from bioblue.dataset import Strategy, BioblueDataset
 from hydra.utils import instantiate
+
+log = logging.getLogger(__name__)
 
 
 class BioblueDataModule(pl.LightningDataModule):
     def __init__(
         self,
         data_dir: Path,
+        dataset_name: str,
         train_dataset: Optional[dict] = None,
         val_dataset: Optional[dict] = None,
         test_dataset: Optional[dict] = None,
-        strategies: Optional[List[Strategy]] = (),
+        strategies: Optional[Dict[str, Strategy]] = None,
         batch_size: int = 2,
         num_workers: int = 1,
     ):
         super().__init__()
-        self.data_dir = Path(data_dir)
+        self.data_dir = Path(data_dir) / dataset_name
         self.train_ds = train_dataset
         self.val_ds = val_dataset
         self.test_ds = test_dataset
-        self.strategies = [instantiate(strat) for strat in strategies]
+        if strategies is not None:
+            self.strategies = {
+                name: instantiate(strat) for name, strat in strategies.items()
+            }
+        else:
+            self.strategies = {}
         self.batch_size = batch_size
         self.num_workers = num_workers
 
     def prepare_data(self):
-        for strategy in self.strategies:
+        for name, strategy in self.strategies.items():
             strategy.prepare_data(self.data_dir)
 
     def setup(self, stage=None):
-        self.train_ds = instantiate(
-            self.train_ds
-        )  # , root_dir=self.data_dir / "train")
-        self.val_ds = instantiate(self.val_ds)  # , root_dir=self.data_dir / "val")
-        self.test_ds = instantiate(self.test_ds)  # , root_dir=self.data_dir / "test")
+        self.train_ds = instantiate(self.train_ds, root_dir=self.data_dir)
+        self.val_ds = instantiate(self.val_ds, root_dir=self.data_dir)
+        self.test_ds = instantiate(self.test_ds, root_dir=self.data_dir)
 
-        for strategy in self.strategies:
+        for name, strategy in self.strategies.items():
             strategy.setup(self.train_ds, self.val_ds, self.test_ds)
+
+        log.info(f"train size: {len(self.train_ds)}; val size: {len(self.val_ds)}")
 
     def train_dataloader(self) -> DataLoader:
         return DataLoader(

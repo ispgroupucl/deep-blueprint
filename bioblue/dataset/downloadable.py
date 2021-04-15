@@ -40,6 +40,7 @@ class DownloadableDataModule(pl.LightningDataModule):
                 secure=False,
             )
             if self.dir.exists():
+                return
                 dirhash = md5_dir(self.dir)
                 server_dirhash = ""
                 try:

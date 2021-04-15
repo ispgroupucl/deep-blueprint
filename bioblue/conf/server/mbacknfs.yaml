@@ -1,19 +1,13 @@
 # @package _global_
 gpus: 1
-callbacks:
-  - _target_: bioblue.callback.MLFlowCallback
-    log_models: true
-  - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-    dirpath: "./models"
-    save_last: true
-
 dataset:
   data_dir: "${env:CI_PROJECT_DIR}/data"
 hydra:
   job:
     env_set:
-      MLFLOW_S3_ENDPOINT_URL: "http://localhost:9000"
-      MLFLOW_TRACKING_URI: "http://localhost:5000"
+      http_proxy: "socks5://10.1.1.141:9751"
+      MLFLOW_S3_ENDPOINT_URL: "http://100.126.187.12:9000"
+      MLFLOW_TRACKING_URI: "http://100.126.187.12:5000"
   # launcher:
   #   timeout_min: 60
   #   cpus_per_task: 8

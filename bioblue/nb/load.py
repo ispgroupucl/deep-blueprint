@@ -1,6 +1,8 @@
-from typing import Any, Dict, Optional, Tuple
+from bioblue.utils.gpu import pick_gpu
+from typing import Any, Dict, Mapping, Optional, Tuple
 from hydra.utils import instantiate
 from hydra.experimental import initialize_config_module as init_hydra, compose
+from hydra.core.utils import configure_log
 from mlflow.tracking.client import MlflowClient
 from omegaconf import OmegaConf, DictConfig
 import mlflow
@@ -46,11 +48,31 @@ def load_from_cfg(cfg: DictConfig) -> Tuple[pl.LightningModule, pl.LightningData
     return module, datamodule
 
 
-def load_from_overrides(overrides=[]) -> Tuple:
+def load_from_overrides(overrides=[], load_trainer=False) -> Tuple:
     with init_hydra(config_module="bioblue.conf"):
-        cfg = compose(config_name="config", overrides=overrides)
+        cfg = compose(
+            config_name="config", overrides=overrides, return_hydra_config=True
+        )
 
+    configure_log(cfg.hydra.job_logging, cfg.hydra.verbose)
     datamodule = instantiate(cfg.dataset)
     module = instantiate(cfg.module)
+    trainer: Optional[pl.Trainer] = None
+    if load_trainer:
+        logger = instantiate(cfg.logger)
+        callbacks = []
+        if isinstance(cfg.callbacks, Mapping):
+            cfg.callbacks = [cb for cb in cfg.callbacks.values()]
+        for callback in cfg.callbacks:
+            callback = instantiate(callback)
+            callback.cfg = cfg  # FIXME : ugly hack
+            callbacks.append(callback)
 
-    return cfg, module, datamodule
+        if isinstance(cfg.trainer.gpus, int):
+            cfg.trainer.gpus = pick_gpu(cfg.trainer.gpus)
+
+        trainer: pl.Trainer = instantiate(
+            cfg.trainer, logger=logger, default_root_dir=".", callbacks=callbacks
+        )
+
+    return cfg, module, datamodule, trainer

@@ -14,3 +14,6 @@ crop_and_rotate = Compose(
 crop_and_transform = Compose(
     transforms=[A.RandomResizedCrop(512, 512, p=1), A.ElasticTransform()]
 )
+
+crop = Compose(transforms=[A.RandomResizedCrop(512, 512, p=1)])
+

@@ -1,0 +1,62 @@
+# @package _global_
+exp: Threshold
+dataset:
+  _target_: bioblue.dataset.BioblueDataModule
+  train_dataset:
+    _target_: bioblue.dataset.ThresholdableDataset
+    partition: "train"
+    dtypes: ["image", "mip-image"]
+    remove_start: 500
+    remove_end: 500
+    transforms:
+      - _target_: albumentations.RandomCrop
+        height: 512
+        width: 512
+        p: 0.5
+      - _target_: albumentations.Resize
+        height: 512
+        width: 512
+    mean: 0.999
+    std: 0.001
+  val_dataset:
+    _target_: bioblue.dataset.ThresholdableDataset
+    partition: "train"
+    dtypes: ["image", "mip-image"]
+    transforms:
+    #   - _target_: albumentations.RandomCrop
+    #     height: 512
+    #     width: 512
+    #     p: 1
+      - _target_: albumentations.Resize
+        height: 512
+        width: 512
+    mean: 0.999
+    std: 0.0
+  test_dataset: ${dataset.val_dataset}
+  strategies:
+    # visualize:
+    #   _target_: bioblue.dataset.VisualizeStrategy
+    #   train: 10
+    #   val: 10
+    #   test: 10
+    mip:
+      _target_: bioblue.dataset.MIPStrategy
+      source_dtype: image
+      dtype_prefix: mip
+      size: 10
+model:
+  input_format: ["image", "mip-image"]
+  output_format: ["segmentation"]
+callbacks:
+  mlflow:
+    _target_: bioblue.callback.MLFlowCallback
+    log_models: true
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    dirpath: "./models"
+    save_last: true
+    monitor: val_meaniou
+    mode: max
+    filename: "{epoch}-{val_meaniou:.2f}"
+  lr_monitor:
+    _target_: "pytorch_lightning.callbacks.LearningRateMonitor"

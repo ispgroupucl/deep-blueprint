@@ -3,10 +3,3 @@ trainer:
   gpus: ${gpus}
   # fast_dev_run: true
 gpus: "???"
-
-callbacks:
-  - _target_: bioblue.callback.MLFlowCallback
-    log_models: false
-  - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-    dirpath: "./models"
-    save_last: true
