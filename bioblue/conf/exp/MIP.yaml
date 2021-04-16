@@ -26,3 +26,6 @@ callbacks:
     mode: max
     filename: "{epoch}-{val_meaniou:.2f}"
   - _target_: "pytorch_lightning.callbacks.LearningRateMonitor"
+  - _target_: bioblue.callback.SaveVolumeCallback
+    train: true
+    val: true
