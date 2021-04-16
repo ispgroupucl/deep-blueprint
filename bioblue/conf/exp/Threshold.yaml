@@ -60,3 +60,7 @@ callbacks:
     filename: "{epoch}-{val_meaniou:.2f}"
   lr_monitor:
     _target_: "pytorch_lightning.callbacks.LearningRateMonitor"
+  save_volumes:
+    _target_: bioblue.callback.SaveVolumeCallback
+    train: true
+    val: true
