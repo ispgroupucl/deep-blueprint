@@ -24,18 +24,18 @@ def test_md5_dir(dataset_path):
     assert run1 == run2
 
 
-def test_thresholdable_dm(dataset_path):
-    dm = dataset.ThresholdableDataModule(
-        data_dir=dataset_path.parent, directory=dataset_path.name
-    )
-    dm.prepare_data()
-    dm.setup()
-    segms_sum = []
-    for _ in range(10):
-        segms_sum.append(np.sum(dm.train[0]["segmentation"]))
+# def test_thresholdable_dm(dataset_path):
+#     dm = dataset.ThresholdableDataModule(
+#         data_dir=dataset_path.parent, directory=dataset_path.name
+#     )
+#     dm.prepare_data()
+#     dm.setup()
+#     segms_sum = []
+#     for _ in range(10):
+#         segms_sum.append(np.sum(dm.train[0]["segmentation"]))
 
-    print(segms_sum)
-    assert len(set(segms_sum)) > 1
+#     print(segms_sum)
+#     assert len(set(segms_sum)) > 1
 
 
 @pytest.mark.parametrize(

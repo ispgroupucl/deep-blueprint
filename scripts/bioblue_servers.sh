@@ -17,8 +17,14 @@ tmux setenv -t monitor AWS_ACCESS_KEY_ID $AK
 tmux setenv -t monitor AWS_SECRET_ACCESS_KEY $SK
 tmux setenv -t monitor MINIO_ACCESS_KEY $AK
 tmux setenv -t monitor MINIO_SECRET_KEY $SK
-tmux split-window -h -t monitor "mlflow server --backend-store-uri ${DIRECTORY}/mlruns --default-artifact-root s3://mlflow/ --host 0.0.0.0; sleep infinity"
+tmux split-window -h -t monitor "mlflow server --backend-store-uri ${DIRECTORY}/mlruns --default-artifact-root s3://mlflow/ --host 0.0.0.0 || sleep infinity"
 echo "Launched mlflow server"
-tmux split-window -h -t monitor:0 "${DIRECTORY}/minio server ${DIRECTORY}/artifacts; sleep infinity"
+tmux split-window -h -t monitor:0 "${DIRECTORY}/minio server ${DIRECTORY}/artifacts || sleep infinity"
 echo "Launched minio server"
-tmux select-layout -t monitor even-horizontal
+tmux split-window -h -t monitor:0 "gitlab-runner run || sleep infinity"
+echo "Launched gitlab-runner"
+tmux split-window -h -t monitor:0 "tailscaled --tun 'userspace-networking' --state ~/tailscale.state --socket ~/tailscale.socket --socks5-server localhost:9751 || sleep infinity"
+echo "Launched tailscaled"
+tmux split-window -h -t monitor:0 "jupyter lab --no-browser --port 9876 --ip '*' ${DIRECTORY}/.."
+echo "Launched Jupyterlab"
+tmux select-layout -t monitor main-vertical
