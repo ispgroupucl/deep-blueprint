@@ -4,8 +4,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import SimpleITK as sitk
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
+import k3d
+import vtk
 from itkwidgets import view, compare
+import nibabel as nib
 import cv2
 import ipywidgets as widgets
 import os
