@@ -8,7 +8,7 @@ authors = ["Victor Joos <victor.joos@uclouvain.be>"]
 python = ">=3.6.2,<3.10"
 numpy = "^1.19"
 torch = "1.7.1"
-monai = { extras = ["gdown"], version = "^0.2.0" }
+monai = "0.5.0"
 gdown = "^3.11.1"
 nibabel = "^3.1.1"
 matplotlib = "^3.3.2"

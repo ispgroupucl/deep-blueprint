@@ -22,6 +22,7 @@ class BaseSegment(pl.LightningModule):
         segmenter,
         lr=1e-3,
         optimizer="torch.optim.Adam",
+        loss=nn.CrossEntropyLoss,
         optimizer_params=None,
         scheduler=None,
         class_weights=None,
@@ -34,7 +35,10 @@ class BaseSegment(pl.LightningModule):
             segmenter = instantiate(segmenter)
         if class_weights is not None:
             class_weights = torch.tensor(class_weights, dtype=torch.float)
-        self.loss = nn.CrossEntropyLoss(weight=class_weights)
+        if hasattr(loss, "_target_"):
+            self.loss = instantiate(loss)
+        else:
+            self.loss = nn.CrossEntropyLoss(weight=class_weights)
         self.segmenter = segmenter
         self.optimizer_class = optimizer
         self.optimizer_params = optimizer_params if optimizer_params is not None else {}

@@ -1,6 +1,12 @@
 # @package _group_
 _target_: bioblue.module.BaseSegment
 segmenter: "${model}"
+# loss:
+#   _target_: bioblue.loss.DiceCELoss
+#   include_background: false
+#   to_onehot_y: true
+#   softmax: true
+  # ce_weight: [1.0, 5.0]
 scheduler:
   _target_: torch.optim.lr_scheduler.MultiStepLR
   milestones: [10, 30, 50]

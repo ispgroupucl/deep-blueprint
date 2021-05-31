@@ -105,11 +105,12 @@ class MultipleNumpyDataset(Dataset):
         self.original_shape = None
         self.remove_start = remove_start
         self.remove_end = remove_end
+        self.main_dtype = dtypes[0]
         all_len = []
         for dtype in dtypes:
             dtype_len = 0
             for file in sorted((self.root_dir / dtype).iterdir()):
-                if dtype == dtypes[0]:
+                if dtype == self.main_dtype:
                     self.files.append(file.name)
                 data = np.load(file)
                 dtype_len += len(
@@ -117,12 +118,14 @@ class MultipleNumpyDataset(Dataset):
                 )
             all_len.append(dtype_len)
 
-        assert len(np.unique(all_len)) == 1, "unequal number of images"
+        log.debug(f"{self.files}")
+        if len(np.unique(all_len)) != 1:
+            log.warning("Unequal number of images")
 
     def __len__(self) -> int:
         length = 0
         for file in self.files:
-            data = np.load(self.root_dir / self.dtypes[0] / file)
+            data = np.load(self.root_dir / self.main_dtype / file)
             length += len(data.files[self.remove_start : len(data) - self.remove_end])
         return length
 
@@ -134,7 +137,11 @@ class MultipleNumpyDataset(Dataset):
         for dtype in self.dtypes:
             for i, filename in enumerate(self.files):
                 file = self.root_dir / dtype / filename
-                data = np.load(file)
+                try:
+                    data = np.load(file)
+                except Exception as e:
+                    # log.debug(e)
+                    continue
                 for j in range(self.remove_start, len(data) - self.remove_end):
                     self.reverse_index[dtype].append(i)
                     self.array_index[dtype].append(j)
@@ -156,16 +163,21 @@ class MultipleNumpyDataset(Dataset):
 
         sample = {}
         log.debug(
-            "idx: %d; file: %d; array: %d",
+            "%s, idx: %d; file: %d; array: %d",
+            self.main_dtype,
             index,
             self.reverse_index["image"][index],
             self.array_index["image"][index],
         )
+        file_index = self.reverse_index[self.main_dtype][index]
+        array_index = self.array_index[self.main_dtype][index]
+        array_name = self.data[self.main_dtype][file_index].files[array_index]
         for dtype in self.dtypes:
-            file_index = self.reverse_index[dtype][index]
-            array_index = self.array_index[dtype][index]
-            array_name = self.data[dtype][file_index].files[array_index]
-            sample[dtype] = self.data[dtype][file_index][array_name]
+            try:
+                sample[dtype] = self.data[dtype][file_index][array_name]
+            except Exception as e:
+                log.debug(f"{dtype} {file_index} {array_name}")
+                log.debug(f"{e}")
 
         if self.transforms is not None and do_transform:
             sample = self.transforms(**sample)
@@ -217,6 +229,7 @@ def preprocess(
     split=1,
     output_name=None,
     file_suffix=".bmp",
+    seg_suffix=".bmp",
 ):
     output_dir = Path("/home/vjoosdeterbe/projects/bio-blueprints/data/")
     output_name = dataset_name if output_name is None else output_name
@@ -227,9 +240,9 @@ def preprocess(
         log.info(f"processing {name}.")
         img_files = list(sorted((dataset_dir / img_dir).iterdir()))
         img_files = [f for f in img_files if f.suffix == file_suffix]
-        test_img = cv2.imread(img_files[0], cv2.IMREAD_GRAYSCALE)
-        original_shape = test_img.shape
-        test_img = view_as_windows(test_img, crop, step=stride)
+        # test_img = cv2.imread(str(img_files[0]), cv2.IMREAD_GRAYSCALE)
+        # original_shape = test_img.shape
+        # test_img = view_as_windows(test_img, crop, step=stride)
         split_img_files = np.array_split(img_files, split)
         start = 0
         out_img_dir = output_dir / output_name / partition / "image"
@@ -239,7 +252,6 @@ def preprocess(
             out_seg_dir.mkdir(parents=True, exist_ok=True)
         for img_files in split_img_files:
             img_filename = out_img_dir / f"{name}_{start}-{start+len(img_files)-1}.npz"
-            start += len(img_files)
             img_zipf = zipfile.ZipFile(
                 img_filename,
                 mode="w",
@@ -256,8 +268,9 @@ def preprocess(
                     compression=zipfile.ZIP_DEFLATED,
                     allowZip64=True,
                 )
+            start += len(img_files)
             for i, img_file in enumerate(tqdm(img_files)):
-                suffix = img_file.name.rsplit(prefix, 1)[1]
+                suffix = img_file.stem.rsplit(prefix, 1)[1]
                 image = cv2.imread(str(img_file), cv2.IMREAD_GRAYSCALE)
                 image = image.astype(np.uint8)
                 if resize:
@@ -266,13 +279,19 @@ def preprocess(
                     np.lib.format.write_array(fid, image)
 
                 if seg_dir is not None:
-                    seg_files = list((dataset_dir / seg_dir).glob(f"*{suffix}"))
-                    assert len(seg_files) == 1
+                    seg_files = list(
+                        (dataset_dir / seg_dir).glob(f"*{suffix}{seg_suffix}")
+                    )
+                    print(dataset_dir / seg_dir, suffix)
+                    assert len(seg_files) <= 1
+                    if len(seg_files) != 1:
+                        continue
                     seg_file = seg_files[0]
+                    print(seg_file)
                     seg = cv2.imread(str(seg_file), cv2.IMREAD_GRAYSCALE)
                     if resize:
                         seg = cv2.resize(seg, resize, interpolation=cv2.INTER_NEAREST)
-                    if np.max(seg) != 1:
+                    if np.max(seg) == 255:
                         seg[seg == np.max(seg)] = 1
                     with seg_zipf.open(f"arr_{i}.npy", "w", force_zip64=True) as fid:
                         np.lib.format.write_array(fid, seg)

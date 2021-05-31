@@ -26,7 +26,7 @@ class KFoldStrategy(Strategy):
             if self.fold < self.folds - 1
             else len(train_ds.files)
         )
-        val_ds.files = val_ds.files[self.fold * fold_length : end]
+        val_ds.files = train_ds.files[self.fold * fold_length : end]
         train_ds.files = list(set(train_ds.files) - set(val_ds.files))
         log.info(
             f"Split #{self.fold+1}/{self.folds} : "
