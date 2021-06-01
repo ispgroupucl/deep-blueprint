@@ -1,6 +1,6 @@
 # @package _global_
 trainer:
-  max_epochs: 100
+  max_epochs: 50
   gpus: ${gpus}
   auto_scale_batch_size: false
 gpus: "???"

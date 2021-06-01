@@ -20,6 +20,7 @@ class BioblueDataModule(pl.LightningDataModule):
         strategies: Optional[Dict[str, Strategy]] = None,
         batch_size: int = 2,
         num_workers: int = 1,
+        **kwargs,
     ):
         super().__init__()
         self.data_dir = Path(data_dir) / dataset_name
