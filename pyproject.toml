@@ -49,6 +49,7 @@ torchmetrics = "^0.2.0"
 K3D = "^2.9.4"
 vedo = "^2021.0.2"
 python-igraph = "^0.9.4"
+seaborn = "^0.11.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1"
