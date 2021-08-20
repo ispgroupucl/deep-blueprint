@@ -112,6 +112,7 @@ class PlotTrainCallback(pl.Callback):
         for input_key in output_format:
             img = batch[input_key]
             bs = img.shape[0]
+            log.debug(f"segmentation : {np.unique(img)}")
             fig, axs = plt.subplots(ncols=bs, figsize=(bs * 5, 10))
             for i, ax in enumerate(axs):
                 ax.imshow(batch[self.input][i], cmap="gray")
@@ -146,7 +147,7 @@ class SaveVolumeCallback(pl.Callback):
             file_index = dataset.reverse_index["image"][i]
             filename = Path(dataset.files[file_index]).stem
             array_index = dataset.array_index["image"][i]
-            save_name = Path(f"images/volumes/{type}/{filename}/{array_index:04}.jpg")
+            save_name = Path(f"images/volumes/{type}/{filename}/{array_index:04}.png")
             unsqueezed_sample = {}
             for k, s in sample.items():
                 unsqueezed_sample[k] = torch.tensor(s).unsqueeze(0)
@@ -176,13 +177,15 @@ class SaveVolumeCallback(pl.Callback):
             log.debug(f"{batch_idx} {start_idx}")
             log.debug(f"{segmentation.shape} {np.max(segmentation)}")
             for i, segm in enumerate(segmentation, start=start_idx):
+                log.debug(f"inner shape {segm.shape} {np.unique(segm)}")
                 file_index = self.ds_reverse_index["image"][i]
                 filename = Path(self.ds_files[file_index]).stem
                 array_index = self.ds_array_index["image"][i]
                 save_name = Path(
-                    f"images/volumes/epoch{epoch}/{filename}/{array_index:04}.jpg"
+                    f"images/volumes/epoch{epoch}/{filename}/{array_index:04}.png"
                 )
                 save_name.parent.mkdir(parents=True, exist_ok=True)
+
                 cv2.imwrite(str(save_name), segm)
                 log.debug(f"written slice to {save_name}")
 

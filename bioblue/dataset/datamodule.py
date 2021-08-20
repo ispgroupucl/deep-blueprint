@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Type
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from bioblue.dataset import Strategy, BioblueDataset
+from bioblue.dataset import Strategy
 from hydra.utils import instantiate
 
 log = logging.getLogger(__name__)
@@ -38,6 +38,7 @@ class BioblueDataModule(pl.LightningDataModule):
 
     def prepare_data(self):
         for name, strategy in self.strategies.items():
+            log.info(f"Data preparation : {name}")
             strategy.prepare_data(self.data_dir)
 
     def setup(self, stage=None):
@@ -46,6 +47,7 @@ class BioblueDataModule(pl.LightningDataModule):
         self.test_ds = instantiate(self.test_ds, root_dir=self.data_dir)
 
         for name, strategy in self.strategies.items():
+            log.info(f"Dataset setup: {name}")
             strategy.setup(self.train_ds, self.val_ds, self.test_ds)
 
         log.info(f"train size: {len(self.train_ds)}; val size: {len(self.val_ds)}")

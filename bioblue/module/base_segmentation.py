@@ -36,18 +36,22 @@ class BaseSegment(pl.LightningModule):
         if class_weights is not None:
             class_weights = torch.tensor(class_weights, dtype=torch.float)
         if hasattr(loss, "_target_"):
-            self.loss = instantiate(loss)
+            self.loss = instantiate(loss, weight=class_weights)
         else:
             self.loss = nn.CrossEntropyLoss(weight=class_weights)
         self.segmenter = segmenter
+        self.classes = segmenter.classes
+        print(self.classes)
         self.optimizer_class = optimizer
         self.optimizer_params = optimizer_params if optimizer_params is not None else {}
         self.scheduler = scheduler
         self.iou = nn.ModuleDict()
         for set in ["train", "val"]:
-            self.iou[f"{set}_mean"] = IoU(num_classes=2)
-            self.iou[f"{set}_bg"] = IoU(num_classes=2, class_index=0)
-            self.iou[f"{set}_fg"] = IoU(num_classes=2, class_index=1)
+            self.iou[f"{set}_mean"] = IoU(num_classes=len(self.classes) + 1)
+            for i, name in enumerate(["bg", *self.classes]):
+                self.iou[f"{set}_{name}"] = IoU(
+                    num_classes=len(self.classes) + 1, class_index=i
+                )
 
     @auto_move_data
     def forward(self, x):
@@ -59,12 +63,11 @@ class BaseSegment(pl.LightningModule):
 
     def common_step(self, batch):
         seg = batch["segmentation"].to(torch.long)  # .to(torch.float)
-        seg[seg == 2] = 0
+        # seg[seg == 2] = 0
         input_sample = {}
         for dtype in self.input_format:
             input_sample[dtype] = batch[dtype].to(torch.float)
         seg_hat = self(input_sample)
-
         return seg, seg_hat
 
     def training_step(self, batch, batch_idx):

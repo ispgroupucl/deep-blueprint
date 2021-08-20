@@ -1,14 +1,9 @@
-from argparse import ArgumentParser
-from bioblue.dataset.downloadable import md5_dir
 import os
 
 from filelock import FileLock
 
-from bioblue.dataset.utils import NumpyDataset
 from pathlib import Path
 import logging
-from torch.utils.data import DataLoader
-import pytorch_lightning as pl
 import hashlib
 from minio import Minio
 from minio.error import NoSuchKey
@@ -57,3 +52,19 @@ class DownloadStrategy(Strategy):
                 local_path.parent.mkdir(parents=True, exist_ok=True)
                 mclient.fget_object("data", obj.object_name, str(local_path))
 
+
+def md5_update_from_dir(directory, hash):
+    assert Path(directory).is_dir()
+    for path in sorted(Path(directory).iterdir(), key=lambda p: str(p).lower()):
+        hash.update(path.name.encode())
+        if path.is_file():
+            with open(path, "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    hash.update(chunk)
+        elif path.is_dir():
+            hash = md5_update_from_dir(path, hash)
+    return hash
+
+
+def md5_dir(directory):
+    return md5_update_from_dir(directory, hashlib.md5()).hexdigest()

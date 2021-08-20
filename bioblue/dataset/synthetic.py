@@ -26,7 +26,6 @@ log = logging.getLogger(__name__)
 
 class SyntheticDataModule(pl.LightningDataModule):
     """ Module for creating a synthetic datamodule.
-    
     """
 
     def __init__(

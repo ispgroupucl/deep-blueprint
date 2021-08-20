@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import SimpleITK as sitk
+import skimage
 from tqdm.auto import tqdm
 import k3d
 import vtk
@@ -12,6 +13,9 @@ import nibabel as nib
 import cv2
 import ipywidgets as widgets
 import os
+from collections import defaultdict
+import seaborn as sns
+from IPython.display import display, Markdown
 
 from mlflow.tracking import MlflowClient
 import mlflow
@@ -27,6 +31,7 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 
 import bioblue as bb
+import bioblue.plot.cm as cm
 
 from bioblue.nb.image_display import MultiImageDisplay, myshow, myshow3d
 from bioblue.nb.load import load_from_cfg, load_from_runid, load_from_overrides

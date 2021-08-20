@@ -1,0 +1,21 @@
+# @package _group_
+_target_: bioblue.dataset.BioblueDataModule
+data_dir: "${env:HOME}/projects/bio-blueprints/data" # set in server config
+dataset_name: "MV_fibers"
+batch_size: 8
+num_workers: 12 # set in server config
+strategies:
+  preprocess:
+    _target_: bioblue.dataset.DICOMPrepStrategy
+    base_dir: "${env:HOME}/projects/bb-data/MV_Fibers"
+    directories:
+      s14_1: ["s14_1", null]
+train_dataset:
+  _target_: bioblue.dataset.MultipleNumpyDataset
+  partition: "train"
+  dtypes: ["image"]
+val_dataset:
+  _target_: bioblue.dataset.MultipleNumpyDataset
+  partition: "train"
+  dtypes: ["image"]
+test_dataset: ${dataset.val_dataset}
