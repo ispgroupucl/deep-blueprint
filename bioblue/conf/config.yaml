@@ -1,4 +1,5 @@
 defaults:
+  - _self_
   - trainer: default
   - model: conf_unet
   - module: semantic_blurring
@@ -6,8 +7,9 @@ defaults:
   - logger: "mlflow"
   - server: "${host:}"
   - exp: test
-  - hydra/launcher: gpu
+  - override hydra/launcher: gpu
 
+seed: 0
 hydra:
   job:
     env_set:

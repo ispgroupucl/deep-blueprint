@@ -1,14 +1,13 @@
-# @package _group_
-_target_: bioblue.dataset.BioblueDataModule
-data_dir: "${env:HOME}/projects/bio-blueprints/data" # set in server config
+defaults:
+  - base_dataset
+
 dataset_name: "PA_fibers_crop"
 batch_size: 32
-num_workers: 12 # set in server config
 fold: "???"
 strategies:
   preprocess:
     _target_: bioblue.dataset.DICOMPrepStrategy
-    base_dir: "${env:HOME}/projects/bb-data/PA_Fibers"
+    base_dir: "${oc.env:HOME}/projects/bb-data/PA_Fibers"
     directories:
       s1_4: ["s1_4", null]
   kfold:
@@ -39,4 +38,3 @@ val_dataset:
   _target_: bioblue.dataset.MultipleNumpyDataset
   partition: "train"
   dtypes: ["segmentation", "image"]
-test_dataset: ${dataset.val_dataset}

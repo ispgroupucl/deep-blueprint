@@ -1,0 +1,2 @@
+_target_: bioblue.dataset.BioblueDataModule
+test_dataset: ${dataset.val_dataset}

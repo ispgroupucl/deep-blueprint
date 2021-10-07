@@ -6,12 +6,13 @@ from bioblue.utils import git_info
 from omegaconf import OmegaConf
 import platform
 
-if OmegaConf.get_resolver("host") is None:
-    OmegaConf.register_resolver(
-        "host", lambda: platform.node().split(".", 1)[0].lower()
-    )
-    OmegaConf.register_resolver("uname", lambda x: getattr(platform.uname(), x))
-    OmegaConf.register_resolver("git", git_info)
+OmegaConf.register_new_resolver(
+    "host", lambda: platform.node().split(".", 1)[0].lower(), replace=True
+)
+OmegaConf.register_new_resolver(
+    "uname", lambda x: getattr(platform.uname(), x), replace=True
+)
+OmegaConf.register_new_resolver("git", git_info, replace=True)
 
 
 __all__ = ["dataset", "transforms", "model", "conf", "plot"]

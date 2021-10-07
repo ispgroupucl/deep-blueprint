@@ -63,9 +63,9 @@ ConfigStore.instance().store(group="hydra/launcher", name="gpu", node=GPULaunche
 
 
 class BioblueLauncher(Launcher):
-    def setup(self, config, config_loader, task_function):
+    def setup(self, hydra_context, task_function, config):
         self.config = config
-        self.config_loader = config_loader
+        self.hydra_context = hydra_context
         self.task_function = task_function
         self.run_id = None
         if "experiment_name" in self.config.logger:
@@ -84,12 +84,9 @@ class SlurmLauncher(BioblueLauncher):
     def __init__(self, **kwargs) -> None:
         super().__init__()
         self.config = None
-        self.config_loader = None
+        self.hydra_context = None
         self.task_function = None
         self.kwargs = kwargs
-
-    def setup(self, config, config_loader, task_function):
-        super().setup(config, config_loader, task_function)
 
     def launch(self, job_overrides, initial_job_idx):
         setup_globals()
@@ -102,7 +99,7 @@ class SlurmLauncher(BioblueLauncher):
         output_files = []
         for idx, overrides in enumerate(job_overrides):
             idx = initial_job_idx + idx
-            sweep_config = self.config_loader.load_sweep_config(
+            sweep_config = self.hydra_context.config_loader.load_sweep_config(
                 self.config, list(overrides)
             )
             job_params = {
@@ -156,7 +153,7 @@ class SlurmLauncher(BioblueLauncher):
         Singleton.set_state(singleton_state)
         setup_globals()
 
-        sweep_config = self.config_loader.load_sweep_config(
+        sweep_config = self.hydra_context.config_loader.load_sweep_config(
             self.config, sweep_overrides
         )
 
@@ -167,8 +164,9 @@ class SlurmLauncher(BioblueLauncher):
                 sweep_config.logger.tags["mlflow.parentRunId"] = self.run_id
 
         return run_job(
-            config=sweep_config,
+            hydra_context=self.hydra_context,
             task_function=self.task_function,
+            config=sweep_config,
             job_dir_key="hydra.sweep.dir",
             job_subdir_key="hydra.sweep.subdir",
         )
@@ -201,7 +199,9 @@ class GPULauncher(BioblueLauncher):
                     runs.append(ret)
                     del processes[gpu]
                     del sentinels[sentinel]
-            sweep_config = self.config_loader.load_sweep_config(self.config, overrides)
+            sweep_config = self.hydra_context.config_loader.load_sweep_config(
+                self.config, overrides
+            )
 
             available_gpu = next(gpu for gpu in self.gpus if gpu not in processes)
             with open_dict(sweep_config):
@@ -251,6 +251,7 @@ class GPULauncher(BioblueLauncher):
 
     def __call__(self, config, task_function, job_dir_key, job_subdir_key, pipe_send):
         ret = run_job(
+            hydra_context=self.hydra_context,
             config=config,
             task_function=task_function,
             job_dir_key=job_dir_key,

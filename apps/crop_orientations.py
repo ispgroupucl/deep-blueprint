@@ -1,6 +1,7 @@
 from pathlib import Path
 import pandas as pd
-from shapely.geometry.point import Point
+
+# from shapely.geometry.point import Point
 from skimage.filters.thresholding import threshold_multiotsu
 from sklearn.pipeline import make_pipeline
 import streamlit as st
@@ -18,7 +19,8 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
-from shapely.geometry import Polygon
+
+# from shapely.geometry import Polygon
 from numba import njit
 
 st.set_page_config(layout="wide")
@@ -86,6 +88,9 @@ for volume_path in ds_path.iterdir():
         "crop size", min_value=20, max_value=400, value=100, step=10
     )
     image = volume[imagename]
+    orig_fig = plt.figure()
+    plt.imshow(image, cmap="gray")
+    st.pyplot(orig_fig)
     # with st.beta_expander("canvas"):
     #     canvas_result = st_canvas(
     #         fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity

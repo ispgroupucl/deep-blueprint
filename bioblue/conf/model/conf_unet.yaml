@@ -1,4 +1,3 @@
-# @package _group_
 _target_: bioblue.model.ConfUnet
 model_cfg:
   _target_: bioblue.model.ModelConfig

@@ -1,4 +1,9 @@
 # @package _global_
+defaults:
+  - override /dataset: pa_fibers
+  - override /module: base_segmentation
+  - override /model: big_unet
+
 exp: Fibers
 model:
   input_format: ["image"]
@@ -8,6 +13,7 @@ module:
   loss:
     _target_: torch.nn.CrossEntropyLoss
     ignore_index: 0
+  class_weights: [1,1,1]
 callbacks:
   mlflow:
     _target_: bioblue.callback.MLFlowCallback

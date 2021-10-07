@@ -3,3 +3,5 @@ trainer:
   gpus: ${gpus}
   # fast_dev_run: true
 gpus: "???"
+dataset:
+  data_dir: "${oc.envenv:HOME}/projects/bio-blueprints/data"

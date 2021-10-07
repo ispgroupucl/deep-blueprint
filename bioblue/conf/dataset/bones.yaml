@@ -1,5 +1,4 @@
-# @package _group_
-data_dir: "${env:HOME}/projects/bio-blueprints/data/"
+data_dir: "${oc.env:HOME}/projects/bio-blueprints/data/"
 dataset_name: Task201_BoneVessels
 batch_size: 4
 num_workers: 12

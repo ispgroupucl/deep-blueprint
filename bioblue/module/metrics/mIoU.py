@@ -1,6 +1,6 @@
 from typing import Optional
 import pytorch_lightning as pl
-from pytorch_lightning.metrics.classification import ConfusionMatrix
+from torchmetrics import ConfusionMatrix
 import torch
 
 

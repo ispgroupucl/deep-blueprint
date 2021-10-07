@@ -5,7 +5,7 @@ import pandas as pd
 from bioblue.plot import cm
 import numpy as np
 import matplotlib.pyplot as plt
-from hydra.experimental import initialize_config_module as init_hydra, compose
+from hydra import initialize_config_module as init_hydra, compose
 import mlflow
 import time
 

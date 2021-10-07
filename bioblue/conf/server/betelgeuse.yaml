@@ -4,3 +4,6 @@ trainer:
   gpus: ${gpus}
   auto_scale_batch_size: false
 gpus: "???"
+dataset:
+  data_dir: "${oc.env:HOME}/projects/bio-blueprints/data"
+  num_workers: 12

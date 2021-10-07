@@ -1,5 +1,5 @@
 import os
-from hydra.experimental import initialize_config_module as init_hydra, compose
+from hydra import initialize_config_module as init_hydra, compose
 
 with init_hydra(config_module="bioblue.conf"):
     cfg = compose(config_name="config", return_hydra_config=True)

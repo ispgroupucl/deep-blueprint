@@ -1,7 +1,7 @@
 from bioblue.utils.gpu import pick_gpu
 from typing import Any, Dict, Mapping, Optional, Tuple
 from hydra.utils import instantiate
-from hydra.experimental import initialize_config_module as init_hydra, compose
+from hydra import initialize_config_module as init_hydra, compose
 from hydra.core.utils import configure_log
 from mlflow.tracking.client import MlflowClient
 from omegaconf import OmegaConf, DictConfig
@@ -9,6 +9,8 @@ import mlflow
 import pytorch_lightning as pl
 from tempfile import TemporaryDirectory
 from importlib import import_module
+from pytorch_lightning import LightningModule
+from bioblue import module
 
 
 def load_from_runid(run_id: str, ckpt_name: str = "epoch"):
@@ -46,6 +48,21 @@ def load_from_cfg(cfg: DictConfig) -> Tuple[pl.LightningModule, pl.LightningData
     module = instantiate(cfg.module)
 
     return module, datamodule
+
+
+def load_from_dir(run_path, model_path=None, **override):
+    config_path = run_path / ".hydra/config.yaml"
+    config = OmegaConf.load(config_path)
+    module_class: LightningModule = getattr(
+        module, config.module._target_.split(".")[-1]
+    )
+    if model_path is None:
+        model_path = run_path / "models/last.ckpt"
+    model = module_class.load_from_checkpoint(model_path, **override)
+    datamodule = instantiate(config.dataset, _recursive_=False)
+    datamodule.prepare_data()
+    datamodule.setup()
+    return config, model, datamodule
 
 
 def load_from_overrides(overrides=[], load_trainer=False) -> Tuple:

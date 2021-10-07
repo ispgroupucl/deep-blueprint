@@ -42,9 +42,15 @@ class BioblueDataModule(pl.LightningDataModule):
             strategy.prepare_data(self.data_dir)
 
     def setup(self, stage=None):
-        self.train_ds = instantiate(self.train_ds, root_dir=self.data_dir)
-        self.val_ds = instantiate(self.val_ds, root_dir=self.data_dir)
-        self.test_ds = instantiate(self.test_ds, root_dir=self.data_dir)
+        self.train_ds = instantiate(
+            self.train_ds, root_dir=self.data_dir, _recursive_=False
+        )
+        self.val_ds = instantiate(
+            self.val_ds, root_dir=self.data_dir, _recursive_=False
+        )
+        self.test_ds = instantiate(
+            self.test_ds, root_dir=self.data_dir, _recursive_=False
+        )
 
         for name, strategy in self.strategies.items():
             log.info(f"Dataset setup: {name}")

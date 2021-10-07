@@ -20,7 +20,7 @@ from IPython.display import display, Markdown
 from mlflow.tracking import MlflowClient
 import mlflow
 
-from hydra.experimental import initialize_config_module as init_hydra, compose
+from hydra import initialize_config_module as init_hydra, compose
 from hydra.utils import instantiate
 from omegaconf import OmegaConf, open_dict
 
@@ -29,6 +29,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import pytorch_lightning as pl
+from pytorch_lightning.metrics.utils import to_categorical
 
 import bioblue as bb
 import bioblue.plot.cm as cm
