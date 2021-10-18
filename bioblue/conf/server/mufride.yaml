@@ -1,0 +1,9 @@
+# @package _global_
+trainer:
+  max_epochs: 5
+  gpus: ${gpus}
+  auto_scale_batch_size: false
+gpus: "???"
+dataset:
+  data_dir: "${oc.env:HOME}/DATASETS"
+  num_workers: 12
