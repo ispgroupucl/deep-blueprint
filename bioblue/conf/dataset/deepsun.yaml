@@ -1,0 +1,21 @@
+# @package _global_
+model:
+  input_format: ["image"]
+  output_format: ["segmentation"]
+  classes: ["penumbra", "umbra"]
+
+dataset:
+  _target_: bioblue.dataset.BioblueDataModule
+  data_dir: "/home/sayez/DATASETS"
+  dataset_name: "deepsun_bioblue"
+  batch_size: 1
+  num_workers: 3
+  
+  train_dataset:
+    _target_: bioblue.dataset.DeepsunSegmentationDataset
+    partition: "train"
+    dtypes: ["image", "segmentation1", "segmentation2"]
+  val_dataset:
+    _target_: bioblue.dataset.DeepsunSegmentationDataset
+    partition: "train"
+    dtypes: ["image", "segmentation1", "segmentation2"]

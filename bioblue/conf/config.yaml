@@ -2,7 +2,7 @@ defaults:
   - _self_
   - trainer: default
   - model: conf_unet
-  - module: semantic_blurring
+  - module: base_segmentation
   - dataset: synthetic
   - logger: "mlflow"
   - server: "${host:}"
