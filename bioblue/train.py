@@ -27,8 +27,8 @@ def main(cfg: DictConfig) -> None:
         callback.cfg = cfg  # FIXME : ugly hack
         callbacks.append(callback)
 
-    if isinstance(cfg.trainer.gpus, int):
-        cfg.trainer.gpus = pick_gpu(cfg.trainer.gpus)
+    # if isinstance(cfg.trainer.gpus, int):
+    #     cfg.trainer.gpus = pick_gpu(cfg.trainer.gpus)
 
     trainer: pl.Trainer = instantiate(
         cfg.trainer,
