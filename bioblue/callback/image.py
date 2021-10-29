@@ -147,7 +147,9 @@ class SaveVolumeCallback(pl.Callback):
             file_index = dataset.reverse_index["image"][i]
             filename = Path(dataset.files[file_index]).stem
             array_index = dataset.array_index["image"][i]
-            save_name = Path(f"images/volumes/{type}/{filename}/{array_index:04}.png")
+            save_name = Path(
+                f"images/volumes/{type}/{filename}"
+            )  # / {array_index:04}.png")
             unsqueezed_sample = {}
             for k, s in sample.items():
                 unsqueezed_sample[k] = torch.tensor(s).unsqueeze(0)
@@ -155,6 +157,10 @@ class SaveVolumeCallback(pl.Callback):
             log.debug(f"{segm.device} {segm.shape}")
             segm = segm[0].cpu().to(torch.uint8).numpy()
             save_name.parent.mkdir(parents=True, exist_ok=True)
+            if segm.ndim == 2:
+                write_image(save_name / f"{array_index:04}.png", segm)
+            else:
+                write_volume(save_name, segm)
             # original_shape = dataset.original_shape["image"][file_index]
             # segm = cv2.resize(segm, original_shape, interpolation=cv2.INTER_NEAREST)
             cv2.imwrite(str(save_name), segm)
@@ -182,12 +188,14 @@ class SaveVolumeCallback(pl.Callback):
                 filename = Path(self.ds_files[file_index]).stem
                 array_index = self.ds_array_index["image"][i]
                 save_name = Path(
-                    f"images/volumes/epoch{epoch}/{filename}/{array_index:04}.png"
+                    f"images/volumes/epoch{epoch}/{filename}"  # /{array_index:04}.png"
                 )
-                save_name.parent.mkdir(parents=True, exist_ok=True)
+                if segm.ndim == 2:
+                    write_image(save_name / f"{array_index:04}.png", segm)
+                elif segm.ndim == 3:
+                    write_volume(save_name, segm)
 
-                cv2.imwrite(str(save_name), segm)
-                log.debug(f"written slice to {save_name}")
+                log.debug(f"written image or volume to {save_name}")
 
     def on_train_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
         if self.train:
@@ -196,3 +204,17 @@ class SaveVolumeCallback(pl.Callback):
             self.save_dataset(pl_module, trainer.datamodule.val_ds, "validation")
         if self.test:
             self.save_dataset(pl_module, trainer.datamodule.test_ds, "test")
+
+
+def write_image(filename, image):
+    filename.parent.mkdir(parents=True, exist_ok=True)
+    res = cv2.imwrite(str(filename), image)
+    if res is False:
+        raise RuntimeError("CV2 imwrite failed to save image.")
+
+
+def write_volume(dirpath, volume):
+    for index in range(volume.shape[-1]):
+        filename = dirpath / f"{index:04}.png"
+        write_image(filename, volume[:, :, index])
+
