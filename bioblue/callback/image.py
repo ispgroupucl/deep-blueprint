@@ -5,7 +5,7 @@ from pathlib import Path
 import torch
 import cv2
 from torchmetrics.functional.classification import iou
-from pytorch_lightning.metrics.utils import to_categorical
+from torchmetrics.utilities.data import to_categorical
 from bioblue.plot import cm
 import numpy as np
 from tqdm.auto import tqdm

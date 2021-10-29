@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
 import pytorch_lightning.metrics.functional as plF
-from pytorch_lightning.metrics.utils import to_categorical, to_onehot
+from torchmetrics.utilities.data import to_categorical, to_onehot
 import torch
 import torch.nn.functional as F
 

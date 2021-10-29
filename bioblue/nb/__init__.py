@@ -29,7 +29,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import pytorch_lightning as pl
-from pytorch_lightning.metrics.utils import to_categorical
+from torchmetrics.utilities.data import to_categorical, to_onehot
 
 import bioblue as bb
 import bioblue.plot.cm as cm
