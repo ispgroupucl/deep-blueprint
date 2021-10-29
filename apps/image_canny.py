@@ -107,8 +107,9 @@ for img_name in img_names:
         # plt.title("porcine aorta")
         # plt.imshow(img, cmap="gray")
         plt.imshow(img, cmap="gray")
+        plt.imshow(edges, alpha=0.5, cmap=cm.vessel)
         if show_segm:
-            plt.imshow(segm, cmap=cm.vessel, alpha=0.5)
+            plt.imshow(segm, cmap=cm.rb, alpha=0.5)
         col2.pyplot(fig)
         plt.close("all")
         break
