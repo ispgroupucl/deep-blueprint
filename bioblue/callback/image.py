@@ -171,7 +171,7 @@ class SaveVolumeCallback(pl.Callback):
     def on_validation_batch_end(
         self, trainer: pl.Trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
     ):
-        if trainer.running_sanity_check:
+        if trainer.sanity_checking:
             return
         epoch = trainer.current_epoch
         log.debug(f"train epoch {epoch}")
