@@ -85,6 +85,8 @@ def create_cba(model_cfg):
     _Conv = model_cfg.conv
     _Normalization = model_cfg.bn
     _Activation = model_cfg.act
+    _Zeropad = model_cfg.zeropad
+    dim = model_cfg.dim
 
     class BasicBlock(nn.Module):
         """Basic building block of all networks.
@@ -142,8 +144,8 @@ def create_cba(model_cfg):
             )
             if ksize % 2 == 0 and padding > 0:
                 conv = nn.Sequential(
-                    nn.ZeroPad2d(
-                        (padding, padding - 1, padding, padding - 1)
+                    _Zeropad(
+                        dim * (padding, padding - 1)
                     ),  # TODO: check if 0's should not be padding-1
                     conv,
                 )
