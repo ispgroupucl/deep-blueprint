@@ -4,12 +4,12 @@ from itertools import islice
 import numpy as np
 import logging
 
-from . import Strategy
+from . import PrepareStrategy
 
 log = logging.getLogger(__name__)
 
 
-class MIPStrategy(Strategy):
+class MIPStrategy(PrepareStrategy):
     def __init__(
         self, source_dtype: str = "image", dtype_prefix: str = "mip", size: int = 10
     ) -> None:

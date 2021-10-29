@@ -3,12 +3,12 @@ import numpy as np
 import logging
 from pathlib import Path
 
-from . import Strategy
+from . import SetupStrategy
 
 log = logging.getLogger(__name__)
 
 
-class KFoldStrategy(Strategy):
+class KFoldStrategy(SetupStrategy):
     def __init__(self, fold, folds=5) -> None:
         assert fold < folds
         self.fold = fold
@@ -32,11 +32,11 @@ class KFoldStrategy(Strategy):
             f"Split #{self.fold+1}/{self.folds} : "
             f"{len(train_ds)} samples for train and {len(val_ds)} for validation."
             f" (starting from {self.fold*fold_length} to {end})"
-            f"\n training set containing {train_ds.files}"
         )
+        log.debug(f"training set containing {train_ds.files}")
 
 
-class NamedKFoldStrategy(Strategy):
+class NamedKFoldStrategy(SetupStrategy):
     def __init__(self, fold, folds: List[list]) -> None:
         assert fold < len(folds)
         super().__init__()
