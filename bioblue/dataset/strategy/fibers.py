@@ -1,5 +1,6 @@
-from typing import List
+from typing import Dict, List
 from numba import njit
+from scipy.sparse import data
 from skimage.filters.thresholding import threshold_multiotsu
 from bioblue.dataset.numpy import NpzWriter
 from pathlib import Path
@@ -69,7 +70,10 @@ class FiberCropStrategy(PrepareStrategy):
     #             zf = self.zf_dict.set_default(idx_name, NpzWriter(filename))
     #             zf.add(crop)
 
-    def write_files(self, data_dir: Path) -> None:
+    def write_files(
+        self, data_dir: Path, latest_files: Dict[str, Dict[str, List[Path]]]
+    ) -> Dict[str, Dict[str, List[Path]]]:
+        raise NotImplementedError("Not yet part of new-way-of-working")
         filenames = []
         for np_file in (data_dir / self.partition / self.input_dtype).iterdir():
             log.debug(f"processing {np_file.name}")
@@ -139,11 +143,14 @@ class FiberCrop3dStrategy(FiberCropStrategy):
 
         return idx_name, rotated_crop
 
-    def write_files(self, data_dir: Path, latest_files: List[Path]) -> None:
+    def write_files(
+        self, data_dir: Path, summary: Dict[str, Dict[str, List[Path]]]
+    ) -> Dict[str, Dict[str, List[Path]]]:
         filenames = []
-        latest_files = (
-            latest_files or (data_dir / self.partition / self.input_dtype).iterdir()
-        )
+        if summary:
+            latest_files = summary[self.partition][self.input_dtype]
+        else:
+            latest_files = (data_dir / self.partition / self.input_dtype).iterdir()
         for np_file in latest_files:
             log.debug(f"processing {np_file.name}")
             sample = np.load(np_file)
@@ -167,7 +174,7 @@ class FiberCrop3dStrategy(FiberCropStrategy):
                     filenames.append(filename.relative_to(data_dir))
                     np.savez_compressed(filename, crop)
 
-        return dict(image=filenames)
+        return {self.partition: {self.input_dtype: filenames}}
 
 
 class FiberSegStrategy(PrepareStrategy):
@@ -178,12 +185,15 @@ class FiberSegStrategy(PrepareStrategy):
         self.input_dtype = input_dtype
         self.dtype = dtype
 
-    def write_files(self, data_dir: Path, latest_files: List[Path]) -> None:
+    def write_files(
+        self, data_dir: Path, summary: Dict[str, Dict[str, List[Path]]]
+    ) -> Dict[str, Dict[str, List[Path]]]:
         filenames = []
         seg_filenames = []
-        latest_files = (
-            latest_files or (data_dir / self.partition / self.input_dtype).iterdir()
-        )
+        if summary:
+            latest_files = summary[self.partition][self.input_dtype]
+        else:
+            latest_files = (data_dir / self.partition / self.input_dtype).iterdir()
         for np_file in latest_files:
             log.debug(f"processing {np_file.name}")
             filenames.append(np_file.relative_to(data_dir))
@@ -203,7 +213,9 @@ class FiberSegStrategy(PrepareStrategy):
                         )
                     zf.add(segmentation)
 
-        return dict(image=filenames, segmentation=seg_filenames)
+        return {
+            self.partition: {self.input_dtype: filenames, self.dtype: seg_filenames}
+        }
 
 
 def orientation(crop, num=100):

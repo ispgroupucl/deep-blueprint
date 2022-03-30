@@ -72,11 +72,10 @@ def load_from_overrides(overrides=[], load_trainer=False) -> Tuple:
         )
 
     configure_log(cfg.hydra.job_logging, cfg.hydra.verbose)
-    datamodule = instantiate(cfg.dataset)
-    module = instantiate(cfg.module)
+    datamodule = instantiate(cfg.dataset, _recursive_=False)
+    module = instantiate(cfg.module, _recursive_=False)
     trainer: Optional[pl.Trainer] = None
     if load_trainer:
-        logger = instantiate(cfg.logger)
         callbacks = []
         if isinstance(cfg.callbacks, Mapping):
             cfg.callbacks = [cb for cb in cfg.callbacks.values()]
@@ -89,7 +88,7 @@ def load_from_overrides(overrides=[], load_trainer=False) -> Tuple:
             cfg.trainer.gpus = pick_gpu(cfg.trainer.gpus)
 
         trainer: pl.Trainer = instantiate(
-            cfg.trainer, logger=logger, default_root_dir=".", callbacks=callbacks
+            cfg.trainer, logger=cfg.logger, default_root_dir=".", callbacks=callbacks
         )
 
     return cfg, module, datamodule, trainer

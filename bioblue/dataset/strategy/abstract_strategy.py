@@ -30,24 +30,33 @@ class PrepareStrategy(ABC):
                 log.debug(f"{class_name} already in summary file")
                 return
 
-            latest_files = [data_dir / f for f in summary[summary["latest"]]["image"]]
+            latest = summary["latest"]
+            latest_files = summary[latest]
+            # Convert string to Paths
+            for split, splits in latest_files:
+                for dtype, files in splits:
+                    latest_files[split][dtype] = [data_dir / f for f in files]
         else:
             latest_files = None
 
         filenames = self.write_files(data_dir, latest_files)
-        # Convert paths to string
-        for dtype, filenames_dtype in filenames.items():
-            filenames[dtype] = [str(f) for f in filenames_dtype]
 
+        # Convert Paths to string
+        for split, filenames_split in filenames.items():
+            for dtype, filenames_dtype in filenames_split.items():
+                filenames[split][dtype] = [str(f) for f in filenames_dtype]
         summary = {**summary, "latest": class_name, class_name: filenames}
         with open(data_dir / "summary.json", "w") as summary_fp:
-            json.dump(
-                summary, summary_fp,
-            )
+            json.dump(summary, summary_fp, indent=2)
 
     @abstractmethod
     def write_files(
-        self, data_dir: Path, latest_files: List[Path]
-    ) -> Dict[str, List[Path]]:
-        """Write files and return the list of written files."""
+        self, data_dir: Path, latest_files: Dict[str, Dict[str, List[Path]]]
+    ) -> Dict[str, Dict[str, List[Path]]]:
+        """Write files and return the list of written files.
+        
+        Args:
+            data_dir: path to dataset directory
+            latest_files: dict (train, val, test) of dict (dtype) of list of paths.
+        """
         raise NotImplementedError()

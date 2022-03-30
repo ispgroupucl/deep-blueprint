@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 from bioblue.dataset.numpy import NpzWriter
 from pathlib import Path
 import zipfile
@@ -14,6 +14,23 @@ log = logging.getLogger(__name__)
 interp = dict(image=cv2.INTER_CUBIC, segmentation=cv2.INTER_NEAREST)
 
 
+class SummaryStrategy(PrepareStrategy):
+    def write_files(
+        self, data_dir: Path, latest_files: Dict[str, Dict[str, List[Path]]]
+    ) -> Dict[str, Dict[str, List[Path]]]:
+        summary = {}
+        assert latest_files is None
+        for split_dir in data_dir.iterdir():
+            if not split_dir.is_dir():
+                continue
+            summary[split_dir.name] = {}
+            for cat_dir in split_dir.iterdir():
+                if not split_dir.is_dir():
+                    continue
+                summary[split_dir.name][cat_dir.name] = sorted(cat_dir.iterdir())
+        return summary
+
+
 class DICOMPrepStrategy(PrepareStrategy):
     def __init__(self, base_dir, directories, resize=False, split=1) -> None:
         self.base_dir = Path(base_dir)
@@ -21,7 +38,9 @@ class DICOMPrepStrategy(PrepareStrategy):
         self.resize = resize
         self.split = split
 
-    def write_files(self, data_dir: Path, latest_files: List[Path]) -> None:
+    def write_files(
+        self, data_dir: Path, latest_files: Dict[str, Dict[str, List[Path]]]
+    ) -> Dict[str, Dict[str, List[Path]]]:
         filenames = []
         assert latest_files is None
         for name, (image_dir, segm_dir) in self.directories.items():
@@ -50,7 +69,7 @@ class DICOMPrepStrategy(PrepareStrategy):
                                 )
                             zf.add(image)
 
-        return dict(image=filenames)
+        return dict(train=dict(image=filenames))
 
     def get_dicom_images(self, **directories):
         images = {}

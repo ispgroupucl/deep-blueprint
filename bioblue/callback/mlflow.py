@@ -9,22 +9,31 @@ class MLFlowCallback(pl.Callback):
         self.log_models = log_models
         self.cfg = cfg
 
+    def get_mlflowclient(self, logger):
+        if isinstance(logger.experiment, MlflowClient):
+            return logger
+        elif isinstance(logger.experiment, list):
+            for i, exp in enumerate(logger.experiment):
+                if isinstance(exp, MlflowClient):
+                    return logger[i]
+        return None
+
     def on_init_end(self, trainer):
-        if not isinstance(trainer.logger.experiment, MlflowClient):
+        logger = self.get_mlflowclient(trainer.logger)
+        if logger is None:
             return
 
-        trainer.logger.experiment.log_artifacts(
-            trainer.logger.run_id, local_dir="./.hydra", artifact_path="config"
+        logger.experiment.log_artifacts(
+            logger.run_id, local_dir="./.hydra", artifact_path="config"
         )
-        trainer.logger.log_hyperparams(dict(dataset=self.cfg["dataset"]))
+        logger.log_hyperparams(dict(dataset=self.cfg["dataset"]))
 
     def on_train_end(self, trainer, pl_module):
-        if not isinstance(pl_module.logger.experiment, MlflowClient):
+        logger = self.get_mlflowclient(pl_module.logger)
+        if logger is None:
             return
 
         if Path("./models").exists() and self.log_models:
-            pl_module.logger.experiment.log_artifacts(
-                run_id=pl_module.logger.run_id,
-                local_dir="./models",
-                artifact_path="models",
+            logger.experiment.log_artifacts(
+                run_id=logger.run_id, local_dir="./models", artifact_path="models",
             )

@@ -18,7 +18,6 @@ def main(cfg: DictConfig) -> None:
     seed_everything(cfg.seed, workers=True)
     datamodule = instantiate(cfg.dataset, _recursive_=False)
     module = instantiate(cfg.module, _recursive_=False)
-    logger = instantiate(cfg.logger, _recursive_=False)
     callbacks = []
     if isinstance(cfg.callbacks, Mapping):
         cfg.callbacks = [cb for cb in cfg.callbacks.values()]
@@ -32,10 +31,10 @@ def main(cfg: DictConfig) -> None:
 
     trainer: pl.Trainer = instantiate(
         cfg.trainer,
-        logger=logger,
+        logger=cfg.logger,
         default_root_dir=".",
         callbacks=callbacks,
-        _recursive_=False,
+        _recursive_=True,
         _convert_="all",
     )
     trainer.tune(module, datamodule=datamodule)

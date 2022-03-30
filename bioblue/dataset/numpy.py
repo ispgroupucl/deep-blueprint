@@ -35,7 +35,10 @@ class MultipleNumpyDataset(Dataset):
     ) -> None:
         super().__init__()
         if isinstance(transforms, collections.Mapping):
-            transforms = partial(call, config=transforms)
+            if "_target_" in transforms:
+                transforms = instantiate(transforms, _recursive_=True)
+            else:
+                transforms = partial(call, config=transforms)
         elif isinstance(transforms, collections.Sequence):
             transforms_init = []
             for transform in transforms:
@@ -140,7 +143,10 @@ class SummaryNumpyDataset(MultipleNumpyDataset):
     ) -> None:
         super(MultipleNumpyDataset, self).__init__()
         if isinstance(transforms, collections.Mapping):
-            transforms = partial(call, config=transforms)
+            if "_target_" in transforms:
+                transforms = instantiate(transforms, _recursive_=True)
+            else:
+                transforms = partial(call, config=transforms)
         elif isinstance(transforms, collections.Sequence):
             transforms_init = []
             for transform in transforms:
@@ -163,7 +169,7 @@ class SummaryNumpyDataset(MultipleNumpyDataset):
             summary = summary[summary["latest"]]
         for dtype in dtypes:
             dtype_len = 0
-            for file in sorted(summary[dtype]):
+            for file in sorted(summary[partition][dtype]):
                 file = root_dir / file
                 if dtype == self.main_dtype:
                     self.files.append(file.name)
@@ -227,12 +233,12 @@ class SummaryNumpyDataset(MultipleNumpyDataset):
                 data = np.load(file)
                 array_name = data.files[array_index]
                 sample[dtype] = data[array_name]
+                log.debug(f"{sample[dtype].shape}")
             except Exception as e:
                 log.debug(f"{dtype} {file_index} {array_name}")
                 log.debug(f"{e}")
-
         if self.transforms is not None and do_transform:
-            sample = self.transforms(**sample)
+            sample = self.transforms(sample)
 
         log.debug("end getitem")
         return sample

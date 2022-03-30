@@ -1,11 +1,15 @@
 # @package _global_
 logger:
-  _target_: pytorch_lightning.loggers.MLFlowLogger
-  experiment_name: "${exp}"
-  tracking_uri: "${oc.env:MLFLOW_TRACKING_URI}"
-  tags:
-    "mlflow.user": "${oc.env:USER}"
-    "mlflow.source.type": "LOCAL"
-    "mlflow.source.git.commit": "${git:commit}"
-    "mlflow.source.git.branch": "${git:branch}"
+  - _target_: pytorch_lightning.loggers.MLFlowLogger
+    experiment_name: "${exp}"
+    tracking_uri: "${oc.env:MLFLOW_TRACKING_URI}"
+    tags:
+      "mlflow.user": "${oc.env:USER}"
+      "mlflow.source.type": "LOCAL"
+      "mlflow.source.git.commit": "${git:commit}"
+      "mlflow.source.git.branch": "${git:branch}"
+  - _target_: pytorch_lightning.loggers.TensorBoardLogger
+    save_dir: "."
+    name: ""
+    version: "logs"
 exp: "???"

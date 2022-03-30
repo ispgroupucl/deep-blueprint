@@ -1,0 +1,67 @@
+defaults:
+  - base_dataset
+
+dataset_name: "PA_synth"
+batch_size: 1
+strategies:
+  preprocess:
+    _target_: bioblue.dataset.SummaryStrategy
+train_dataset:
+  _target_: bioblue.dataset.SummaryNumpyDataset
+  partition: "train"
+  dtypes: ["segmentation", "image"]
+  transforms:
+    _target_: monai.transforms.Compose
+    transforms:
+      - _target_: monai.transforms.AddChanneld
+        keys: ["image", "segmentation"]
+      - _target_: monai.transforms.RandRotated
+        keys: ["image", "segmentation"]
+        range_x: 3.14
+        range_y: 3.14
+        range_z: 3.14
+        prob: 1.0
+        mode: ["bilinear", "nearest"]
+        padding_mode: "zeros"
+      # - _target_: monai.transforms.Rand3DElasticd
+      #   keys: ["image", "segmentation"]
+      #   sigma_range: [5, 7]
+      #   magnitude_range: [256, 512]
+      #   rotate_range: 0.2
+      #   # scale_range: 0.2
+      #   # translate_range: 20
+      #   padding_mode: "zeros"
+      #   mode: ["bilinear", "nearest"]
+      #   prob: 1.0
+      - _target_: monai.transforms.SqueezeDimd
+        keys: ["image", "segmentation"]
+      - _target_: monai.transforms.SelectItemsd
+        keys: ["image", "segmentation"]
+    # - _target_: bioblue.dataset.transform.RandomBackgroundAdd
+    #   p_background: 0.05
+    # - _target_: bioblue.dataset.transform.DropSegmentation
+    #   p_dropout: 0.5
+    # - _target_: albumentations.Rotate
+    #   limit: 90
+    #   border_mode: 0
+    #   value: 0
+    #   mask_value: 0
+    # - _target_: albumentations.CropAndPad
+    #   percent: [-0.2, 0]
+    #   keep_size: true
+    #   interpolation: 0
+val_dataset:
+  _target_: bioblue.dataset.SummaryNumpyDataset
+  partition: "val"
+  dtypes: ["segmentation", "image"]
+  transforms:
+    _target_: monai.transforms.Compose
+    transforms:
+      - _target_: monai.transforms.AddChanneld
+        keys: ["image", "segmentation"]
+      - _target_: bioblue.dataset.transform.MapLabels
+        mapping: {2: 0} # Remove valleys from dataset
+      - _target_: monai.transforms.SqueezeDimd
+        keys: ["image", "segmentation"]
+      - _target_: monai.transforms.SelectItemsd
+        keys: ["image", "segmentation"]
