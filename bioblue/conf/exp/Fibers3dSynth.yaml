@@ -3,7 +3,7 @@ defaults:
   - override /dataset: pa_synth
   - override /module: base_segmentation
   - override /model: conf_unet
-  - override /logger: none
+  # - override /logger: none
 
 exp: Fibers3dSynth
 dataset:
@@ -26,13 +26,13 @@ callbacks:
   # mlflow:
   #   _target_: bioblue.callback.MLFlowCallback
   #   log_models: true
-  # model_checkpoint:
-  #   _target_: pytorch_lightning.callbacks.ModelCheckpoint
-  #   dirpath: "./models"
-  #   save_last: true
-  #   monitor: val_meaniou
-  #   mode: max
-  #   filename: "{epoch}-{val_meaniou:.2f}"
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    dirpath: "./models"
+    save_last: true
+    monitor: val_meaniou
+    mode: max
+    filename: "{epoch}-{val_meaniou:.2f}"
   lr_monitor:
     _target_: "pytorch_lightning.callbacks.LearningRateMonitor"
   save_volumes:

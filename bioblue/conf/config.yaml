@@ -7,7 +7,7 @@ defaults:
   - logger: "mlflow"
   - server: "${host:}"
   - exp: test
-  - override hydra/launcher: gpu
+  # - override hydra/launcher: gpu
 
 seed: 0
 hydra:

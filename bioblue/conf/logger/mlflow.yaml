@@ -6,8 +6,8 @@ logger:
     tags:
       "mlflow.user": "${oc.env:USER}"
       "mlflow.source.type": "LOCAL"
-      "mlflow.source.git.commit": "${git:commit}"
-      "mlflow.source.git.branch": "${git:branch}"
+      "mlflow.source.git.commit": "${git:commit,${hydra:runtime.cwd}}"
+      "mlflow.source.git.branch": "${git:branch,${hydra:runtime.cwd}}"
   - _target_: pytorch_lightning.loggers.TensorBoardLogger
     save_dir: "."
     name: ""

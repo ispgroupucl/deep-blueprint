@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 from typing import Mapping
 from bioblue.utils.gpu import pick_gpu
 import mlflow
@@ -16,6 +18,8 @@ from pytorch_lightning import seed_everything
 @hydra.main(config_path="conf", config_name="config")
 def main(cfg: DictConfig) -> None:
     seed_everything(cfg.seed, workers=True)
+    latest_checkpoint = Path(os.getcwd()) / "models/last.ckpt"
+    latest_checkpoint = latest_checkpoint if latest_checkpoint.exists() else None
     datamodule = instantiate(cfg.dataset, _recursive_=False)
     module = instantiate(cfg.module, _recursive_=False)
     callbacks = []
