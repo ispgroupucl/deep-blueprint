@@ -7,7 +7,8 @@ authors = ["Victor Joos <victor.joos@uclouvain.be>"]
 [tool.poetry.dependencies]
 python = ">=3.7,<3.10"
 numpy = "^1.19"
-torch = {url = "https://download.pytorch.org/whl/cu113/torch-1.11.0%2Bcu113-cp38-cp38-linux_x86_64.whl", markers = "sys_platform == 'linux'"}
+torch = [{python = "~3.8", url = "https://download.pytorch.org/whl/cu113/torch-1.11.0%2Bcu113-cp38-cp38-linux_x86_64.whl"},
+         {python = "~3.7", url = "https://download.pytorch.org/whl/cu113/torch-1.11.0%2Bcu113-cp37-cp37m-linux_x86_64.whl"}]
 monai = "^0.8.0"
 gdown = "^3.11.1"
 nibabel = "^3.1.1"
