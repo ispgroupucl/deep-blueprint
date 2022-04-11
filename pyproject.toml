@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bioblue"
-version = "0.2.0"
+version = "0.3.0"
 description = ""
 authors = ["Victor Joos <victor.joos@uclouvain.be>"]
 
@@ -14,7 +14,7 @@ nibabel = "^3.1.1"
 matplotlib = "^3.4.3"
 scikit-image = "^0.17.2"
 pillow = "^7.2.0"
-pytorch-lightning = "^1.4.2"
+pytorch-lightning = "^1.6.0"
 # vtk = "^9.0.1"
 # itk = "^5.1.0"
 # itk-texturefeatures = "^3.3.1"

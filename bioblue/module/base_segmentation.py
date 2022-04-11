@@ -1,7 +1,6 @@
 import io
 from typing import Any, List
 import pytorch_lightning as pl
-import pytorch_lightning.metrics.functional as plF
 from pytorch_lightning.core.decorators import auto_move_data
 import torch
 import torch.nn as nn

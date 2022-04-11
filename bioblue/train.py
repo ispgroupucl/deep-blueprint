@@ -42,7 +42,7 @@ def main(cfg: DictConfig) -> None:
         _convert_="all",
     )
     trainer.tune(module, datamodule=datamodule)
-    trainer.fit(module, datamodule=datamodule)
+    trainer.fit(module, datamodule=datamodule, ckpt_path=latest_checkpoint)
     return {key: value.item() for key, value in trainer.callback_metrics.items()}
 
 
