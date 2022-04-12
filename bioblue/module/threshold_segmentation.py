@@ -1,7 +1,8 @@
 import io
 from typing import Any, List
 import pytorch_lightning as pl
-import pytorch_lightning.metrics.functional as plF
+
+# import pytorch_lightning.metrics.functional as plF
 import torch
 import torch.nn.functional as F
 import logging
@@ -45,7 +46,7 @@ class ThresholdSegment(pl.LightningModule):
         seg_hat = self(dict(image=img))
 
         loss = F.cross_entropy(seg_hat, seg)
-        iou_val = plF.iou(to_categorical(seg_hat), seg, num_classes=2)
+        iou_val = None  # plF.iou(to_categorical(seg_hat), seg, num_classes=2)
         return dict(loss=loss, iou=iou_val)
 
     def training_step(self, batch, batch_idx):

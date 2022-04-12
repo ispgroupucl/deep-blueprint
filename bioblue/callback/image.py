@@ -28,7 +28,7 @@ class PlotImageCallback(pl.Callback):
         dm = trainer.val_dataloaders[0]
         seen = 0
         for batch in dm:
-            segmentation = pl_module(batch)
+            segmentation = pl_module.predict(batch)
             if seen > self.num_samples:
                 break
             cat_segm = to_categorical(segmentation)
@@ -98,7 +98,7 @@ class PlotTrainCallback(pl.Callback):
         log.debug(outputs)
         img = batch[self.input].cpu()
         bs = img.shape[0]
-        segmentation = pl_module(batch)
+        segmentation = pl_module.predict(batch)
         segmentation = to_categorical(segmentation).cpu()
         batch["_segm"] = segmentation
         display_batch(batch, self.input, "_segm")
@@ -193,7 +193,7 @@ class SaveVolumeCallback(pl.Callback):
             unsqueezed_sample = {}
             for k, s in sample.items():
                 unsqueezed_sample[k] = torch.tensor(s).unsqueeze(0)
-            segm = to_categorical(pl_module(unsqueezed_sample))
+            segm = to_categorical(pl_module.predict(unsqueezed_sample))
             log.debug(f"{segm.device} {segm.shape}")
             segm = segm[0].cpu().to(torch.uint8).numpy()
             save_name.parent.mkdir(parents=True, exist_ok=True)
@@ -218,7 +218,7 @@ class SaveVolumeCallback(pl.Callback):
         if epoch % self.period == 0:
             batch_size = batch["segmentation"].shape[0]
             start_idx = batch_idx * batch_size
-            segmentation = pl_module(batch)
+            segmentation = pl_module.predict(batch)
             segmentation = to_categorical(segmentation).cpu().to(torch.uint8).numpy()
             log.debug(f"{batch_idx} {start_idx}")
             log.debug(f"{segmentation.shape} {np.max(segmentation)}")
