@@ -11,6 +11,7 @@ from tempfile import TemporaryDirectory
 from importlib import import_module
 from pytorch_lightning import LightningModule
 from bioblue import module
+from omegaconf import OmegaConf
 
 
 def load_from_runid(run_id: str, ckpt_name: str = "epoch"):
@@ -50,19 +51,47 @@ def load_from_cfg(cfg: DictConfig) -> Tuple[pl.LightningModule, pl.LightningData
     return module, datamodule
 
 
-def load_from_dir(run_path, model_path=None, **override):
+def load_from_dir(run_path, model_path=None, load_trainer=False, override=[]):
     config_path = run_path / ".hydra/config.yaml"
-    config = OmegaConf.load(config_path)
+    cfg = OmegaConf.load(config_path)
+    
+    with init_hydra(config_module="bioblue.conf"):
+        cfg2 = compose(
+            config_name="config", overrides=override, return_hydra_config=True
+        )
+    cfg = OmegaConf.merge(cfg, cfg2)
+
     module_class: LightningModule = getattr(
-        module, config.module._target_.split(".")[-1]
+        module, cfg.module._target_.split(".")[-1]
     )
     if model_path is None:
         model_path = run_path / "models/last.ckpt"
-    model = module_class.load_from_checkpoint(model_path, **override)
-    datamodule = instantiate(config.dataset, _recursive_=False)
+    model = module_class.load_from_checkpoint(model_path)
+
+
+    datamodule = instantiate(cfg.dataset, _recursive_=False)
     datamodule.prepare_data()
     datamodule.setup()
-    return config, model, datamodule
+
+    trainer: Optional[pl.Trainer] = None
+    if load_trainer:
+        logger = instantiate(cfg.logger)
+        callbacks = []
+        if isinstance(cfg.callbacks, Mapping):
+            cfg.callbacks = [cb for cb in cfg.callbacks.values()]
+        for callback in cfg.callbacks:
+            callback = instantiate(callback)
+            callback.cfg = cfg  # FIXME : ugly hack
+            callbacks.append(callback)
+
+        if isinstance(cfg.trainer.gpus, int):
+            cfg.trainer.gpus = pick_gpu(cfg.trainer.gpus)
+
+        trainer: pl.Trainer = instantiate(
+            cfg.trainer, logger=logger, default_root_dir=".", callbacks=callbacks
+        )
+
+    return cfg, model, datamodule, trainer
 
 
 def load_from_overrides(overrides=[], load_trainer=False) -> Tuple:
@@ -72,8 +101,9 @@ def load_from_overrides(overrides=[], load_trainer=False) -> Tuple:
         )
 
     configure_log(cfg.hydra.job_logging, cfg.hydra.verbose)
-    datamodule = instantiate(cfg.dataset)
-    module = instantiate(cfg.module)
+    print(cfg.module)
+    datamodule = instantiate(cfg.dataset, _recursive_=False)
+    module = instantiate(cfg.module, _recursive_=False)
     trainer: Optional[pl.Trainer] = None
     if load_trainer:
         logger = instantiate(cfg.logger)

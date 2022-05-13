@@ -69,10 +69,12 @@ class BioblueDataModule(pl.LightningDataModule):
 
     def val_dataloader(self) -> DataLoader:
         return DataLoader(
-            self.val_ds, batch_size=self.batch_size, num_workers=self.num_workers
+            self.val_ds, batch_size=self.batch_size, num_workers=self.num_workers,
+            shuffle=False,
         )
 
     def test_dataloader(self) -> DataLoader:
         return DataLoader(
-            self.test_ds, batch_size=self.batch_size, num_workers=self.num_workers
+            self.test_ds, batch_size=self.batch_size, num_workers=self.num_workers,
+            shuffle=False,
         )

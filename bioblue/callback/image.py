@@ -9,6 +9,8 @@ from pytorch_lightning.metrics.utils import to_categorical
 from bioblue.plot import cm
 import numpy as np
 from tqdm.auto import tqdm
+import os
+import skimage.io as io
 
 log = logging.getLogger(__name__)
 
@@ -70,12 +72,12 @@ class PlotTrainCallback(pl.Callback):
         if not self.shown:
             return
         log.debug(outputs)
-        img = batch[self.input]
+        img = batch[self.input].cpu()
         bs = img.shape[0]
         segmentation = pl_module(batch)
         segmentation = to_categorical(segmentation).cpu()
-        fig, axs = plt.subplots(ncols=bs, figsize=(bs * 5, 10))
-        for i, ax in enumerate(axs):
+        fig, axs = plt.subplots(ncols=bs, figsize=(bs * 5, 10), squeeze=False)
+        for i, ax in enumerate(axs[0]):
             ax.imshow(img[i], cmap="gray")
             ax.imshow(segmentation[i], cmap=cm.hsv, alpha=0.7, interpolation="none")
             ax.set_title(f"output")
@@ -101,28 +103,28 @@ class PlotTrainCallback(pl.Callback):
         for input_key in input_format:
             img = batch[input_key]
             bs = img.shape[0]
-            fig, axs = plt.subplots(ncols=bs, figsize=(bs * 5, 10))
-            for i, ax in enumerate(axs):
-                ax.imshow(img[i], cmap="gray")
+            fig, axs = plt.subplots(ncols=bs, figsize=(bs * 5, 10), squeeze=False)
+            for i, ax in enumerate(axs[0]):
+                ax.imshow(img[i].cpu(), cmap="gray")
                 ax.set_title(f"{input_key}")
             plt.show()
             plt.close(fig)
 
         output_format = pl_module.output_format  # FIXME : as above
         for input_key in output_format:
-            img = batch[input_key]
+            img = batch[input_key].cpu()
             bs = img.shape[0]
             log.debug(f"segmentation : {np.unique(img)}")
-            fig, axs = plt.subplots(ncols=bs, figsize=(bs * 5, 10))
-            for i, ax in enumerate(axs):
-                ax.imshow(batch[self.input][i], cmap="gray")
+            fig, axs = plt.subplots(ncols=bs, figsize=(bs * 5, 10), squeeze=False)
+            for i, ax in enumerate(axs[0]):
+                ax.imshow(batch[self.input][i].cpu(), cmap="gray")
                 ax.imshow(img[i], cmap=cm.hsv, alpha=0.7, interpolation="none")
                 title = batch["_title"][i] if "_title" in batch else ""
                 ax.set_title(f"{input_key} {title}")
             plt.show()
             plt.close(fig)
 
-
+       
 class SaveVolumeCallback(pl.Callback):
     def __init__(self, val=True, train=True, test=False):
         self.val = val
@@ -196,3 +198,30 @@ class SaveVolumeCallback(pl.Callback):
             self.save_dataset(pl_module, trainer.datamodule.val_ds, "validation")
         if self.test:
             self.save_dataset(pl_module, trainer.datamodule.test_ds, "test")
+
+
+class SavePredictionMaskCallback(pl.Callback):
+    def __init__(self, output_dir, max_batch_size) :
+        self.output_dir = Path(output_dir)
+        self.max_batch_size = max_batch_size
+        if not self.output_dir.is_dir():
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        
+    def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx) -> None:
+        if trainer.running_sanity_check:
+            return
+        
+        segmentation = pl_module(batch)
+        segmentation = to_categorical(segmentation).cpu().to(torch.uint8).numpy()
+
+        dataset = trainer.datamodule.test_ds
+        
+        cur_batch_size = batch["segmentation"].shape[0]
+
+        for i in range(cur_batch_size):
+            idx = batch_idx * self.max_batch_size + i
+            name = (dataset.files[idx]["name"]).split(".")[0]+ ".png"
+
+            io.imsave(self.output_dir / name, segmentation[i], check_contrast=False)
+            

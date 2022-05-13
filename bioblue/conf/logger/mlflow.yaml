@@ -8,4 +8,5 @@ logger:
     "mlflow.source.type": "LOCAL"
     "mlflow.source.git.commit": "${git:commit}"
     "mlflow.source.git.branch": "${git:branch}"
-exp: "???"
+exp: "deepsun"
+# exp: "???"

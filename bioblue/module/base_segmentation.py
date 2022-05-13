@@ -28,7 +28,7 @@ class BaseSegment(pl.LightningModule):
         class_weights=None,
     ):
         super().__init__()
-        self.save_hyperparameters()
+        self.save_hyperparameters(logger=False)
         self.input_format = segmenter["input_format"]
         self.output_format = segmenter["output_format"]
         if hasattr(segmenter, "_target_"):
@@ -36,7 +36,14 @@ class BaseSegment(pl.LightningModule):
         if class_weights is not None:
             class_weights = torch.tensor(class_weights, dtype=torch.float)
         if hasattr(loss, "_target_"):
-            self.loss = instantiate(loss, weight=class_weights)
+            print(loss["_target_"])
+            if (loss["_target_"] == "segmentation_models_pytorch.losses.dice.DiceLoss") or (
+                loss["_target_"] == "bioblue.loss.GeneralizedDiceLoss" ) or (
+                loss["_target_"] == "monai.losses.DiceLoss"   
+                ):
+                self.loss = instantiate(loss)
+            else:
+                self.loss = instantiate(loss, weight=class_weights)
         else:
             self.loss = nn.CrossEntropyLoss(weight=class_weights)
         self.segmenter = segmenter
@@ -46,7 +53,7 @@ class BaseSegment(pl.LightningModule):
         self.optimizer_params = optimizer_params if optimizer_params is not None else {}
         self.scheduler = scheduler
         self.iou = nn.ModuleDict()
-        for set in ["train", "val"]:
+        for set in ["train", "val", "test"]:
             self.iou[f"{set}_mean"] = IoU(num_classes=len(self.classes) + 1)
             for i, name in enumerate(["bg", *self.classes]):
                 self.iou[f"{set}_{name}"] = IoU(
@@ -63,15 +70,26 @@ class BaseSegment(pl.LightningModule):
 
     def common_step(self, batch):
         seg = batch["segmentation"].to(torch.long)  # .to(torch.float)
+        print("seg: ", seg.shape, 'uniques : ', torch.unique(seg))
+        # print(self.classes)
+        seg = F.one_hot(seg, len(self.classes)+1)  # N,H*W -> N,H*W, C
+        seg = seg.permute(0, 3, 1, 2)
+        print(seg.shape)
+
         # seg[seg == 2] = 0
         input_sample = {}
+        print(self.input_format)
         for dtype in self.input_format:
             input_sample[dtype] = batch[dtype].to(torch.float)
+
+        print(input_sample)
         seg_hat = self(input_sample)
+        print("seg_hat: ", seg_hat.shape, 'uniques : ', torch.unique(seg_hat))        
         return seg, seg_hat
 
     def training_step(self, batch, batch_idx):
         seg, seg_hat = self.common_step(batch)
+        # print(torch.unique(seg), torch.unique(seg_hat))
         loss = self.loss(seg_hat, seg)
         self.log("train_loss", loss, on_epoch=True, on_step=False, logger=True)
         for name, iou in self.iou.items():
@@ -92,6 +110,18 @@ class BaseSegment(pl.LightningModule):
                 continue
             iou(F.softmax(seg_hat, dim=1), seg)
             progbar = name == "val_mean"
+            self.log(f"{name}iou", iou, prog_bar=progbar)
+        return dict(loss=loss)
+
+    def test_step(self, batch, batch_idx):
+        seg, seg_hat = self.common_step(batch)
+        loss = self.loss(seg_hat, seg)
+        self.log("test_loss", loss)
+        for name, iou in self.iou.items():
+            if "test" not in name:
+                continue
+            iou(F.softmax(seg_hat, dim=1), seg)
+            progbar = name == "test_mean"
             self.log(f"{name}iou", iou, prog_bar=progbar)
         return dict(loss=loss)
 

@@ -8,10 +8,12 @@ from pathlib import Path
 from collections import defaultdict
 import logging
 import numpy as np
+import cv2
 import os
 from hydra.utils import call, instantiate
 import skimage.io as io
 
+import random
 
 log = logging.getLogger(__name__)
 
@@ -50,13 +52,27 @@ class DeepsunSegmentationDataset(Dataset):
 
         self.files = []
         self.masks_lists = { t: sorted((self.root_dir / t).iterdir()) for t in self.target_types}
+
+        print(self.root_dir / self.main_dtype)
+        print(len(sorted(list((self.root_dir / self.main_dtype).iterdir()))))
+        for t in self.target_types:
+            print(self.root_dir / t)
+            print(len(self.masks_lists[t]))
         
+        # for i, file in enumerate(sorted((self.root_dir / self.main_dtype).iterdir())[:]):
         for i, file in enumerate(sorted((self.root_dir / self.main_dtype).iterdir())):
             cur = {}
             cur[self.main_dtype] = file
             cur['name'] = os.path.basename(file)
+            tmp1 = os.path.splitext(cur['name'])[0]
             for t in self.target_types:
+                # print(len(sorted((self.root_dir / self.main_dtype).iterdir())))
+                # print(t)
                 cur[t] = self.masks_lists[t][i]
+                tmp2 = os.path.splitext(os.path.basename(cur[t]))[0]
+                # print(i)
+                # print(tmp1, "    ", tmp2)
+                assert tmp1 == tmp2
 
             self.files.append(cur)
 
@@ -79,18 +95,30 @@ class DeepsunSegmentationDataset(Dataset):
         #     log.debug(f"{e}")
         
         # pick one segmentation according to distribution
-        segmentation_type = "segmentation1"
+        
+        segmentation_type = random.choice(self.target_types)
         # try:
         seg_file = self.files[index][segmentation_type]
         sample["segmentation"] = (io.imread(seg_file)).astype(float) # load corresponding segmentation mask
 
-        print(sample["segmentation"].dtype)
+
+
+
+        # print(np.unique(sample["segmentation"]))
+
+        # print(sample["segmentation"].dtype)
         # except Exception as e:
         #     log.debug(f"{self.main_dtype} {index} {segmentation_type}")
         #     log.debug(f"{e}")
 
-        
         if self.transforms is not None and do_transform:
             sample = self.transforms(**sample)
 
+        # im_v = cv2.vconcat([sample["image"] , np.max(sample["image"]) * sample["segmentation"]/3])
+        
+        # out_dir = self.root_dir / 'concat'
+        # if not os.path.exists(self.root_dir /'concat'):
+        #     os.mkdir(out_dir)
+        # io.imsave(out_dir / os.path.basename(seg_file), im_v)
+        
         return sample

@@ -1,0 +1,96 @@
+# @package _global_
+trainer:
+  _target_: pytorch_lightning.Trainer
+  max_epochs: 30
+  gpus: ${gpus}
+  auto_scale_batch_size: false
+
+# module:
+#   lr: 1.e-3
+#   loss:
+#     _target_: segmentation_models_pytorch.losses.dice.DiceLoss
+#     mode : "multiclass"
+#     classes: [1,2,3]
+#     ignore_index: 0
+
+module:
+  lr: 1.e-3
+  loss:
+    # _target_: torch.nn.CrossEntropyLoss # <--- WORKS
+    # _target_: bioblue.loss.DiceCELoss
+    _target_: bioblue.loss.GeneralizedDiceLoss
+    # _target_: monai.losses.DiceLoss
+    # ignore_index: 3
+    # include_background: falsce sone
+    include_background: false
+    softmax: true
+    # to_onehot_y : true
+
+model:
+  input_format: ["image"]
+  output_format: ["segmentation"]
+  # classes: ["penumbra", "umbra"]
+  classes: [ "penumbra", "umbra", "ignore"]
+  _target_: bioblue.model.ConfUnet
+  model_cfg:
+    _target_: bioblue.model.ModelConfig
+  block: double
+  architecture:
+    first: 32
+    enc:
+      width: [32, 64, 128, 256, 512, 512, 512]
+      repeat: [1,1,1,1,1,1,1]
+      # width: [32, 64, 128, 256, 512]
+      # repeat: [1,1,1,1,1]
+    dec:
+      # width: [ 256, 128, 64, 32]
+      # repeat: [ 1, 1, 1, 1]
+      width: [512, 512, 256, 128, 64, 32]
+      repeat: [1, 1, 1, 1, 1, 1]
+
+  # architecture:
+  #   first: 32 
+  #   enc:
+  #     width: [16, 32, 48, 96]
+  #     repeat: [2, 3, 3, 4]
+  #   dec:
+  #     width: [48, 32, 32]
+  #     repeat: [2, 2, 1]
+
+
+use_dtypes: "???"
+
+dataset:
+  _target_: bioblue.dataset.BioblueDataModule
+  data_dir: "/globalscratch/users/n/s/nsayez/deepsun_bioblue"
+  dataset_name: "All"
+  # dataset_name: "2013"
+  batch_size: 2
+  num_workers: 3
+  
+  train_dataset:
+    _target_: bioblue.dataset.DeepsunSegmentationDataset
+    partition: "train"
+    dtypes: ${use_dtypes}
+  val_dataset:
+    _target_: bioblue.dataset.DeepsunSegmentationDataset
+    # \/!\/!\/!\/!\/!\/ When training make sure that this partition refers to folder containing ALL types of segmentation, and the folder with GT is named "test_GT"
+    # \/!\/!\/!\/!\/!\/ BUT When comparing with manual GT -> CHANGE NAME OF FOLDERS SUCH THAT the one with GT is named test and the other is named "test_training"
+    partition: "test"
+    dtypes: ${use_dtypes}
+  test_dataset: ${dataset.val_dataset}
+
+callbacks:
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    dirpath: "./models"
+    save_last: true
+    monitor: val_meaniou
+    mode: max
+    filename: "{epoch}-{val_meaniou:.2f}"
+  LR_monitor:
+    _target_: "pytorch_lightning.callbacks.LearningRateMonitor"
+  Save_prediction:
+    _target_: 'bioblue.callback.SavePredictionMaskCallback'
+    output_dir: 'predictions'
+    max_batch_size: ${dataset.batch_size}

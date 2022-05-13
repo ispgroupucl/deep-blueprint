@@ -1,21 +1,42 @@
 # @package _global_
+trainer:
+  _target_: pytorch_lightning.Trainer
+  max_epochs: 50
+  gpus: ${gpus}
+  auto_scale_batch_size: false
+
 model:
   input_format: ["image"]
   output_format: ["segmentation"]
   classes: ["penumbra", "umbra"]
+  _target_: bioblue.model.ConfUnet
+  model_cfg:
+    _target_: bioblue.model.ModelConfig
+  architecture:
+    first: 32
+    enc:
+      width: [16, 32, 48, 96]
+      repeat: [2, 3, 3, 4]
+    dec:
+      width: [48, 32, 32]
+      repeat: [2, 2, 1]
+
+use_dtypes: "???"
 
 dataset:
   _target_: bioblue.dataset.BioblueDataModule
-  data_dir: "/home/sayez/DATASETS"
-  dataset_name: "deepsun_bioblue"
+  data_dir: "/globalscratch/users/n/s/nsayez/deepsun_bioblue"
+  # dataset_name: "2013"
+  dataset_name: "All"
   batch_size: 1
   num_workers: 3
   
   train_dataset:
     _target_: bioblue.dataset.DeepsunSegmentationDataset
     partition: "train"
-    dtypes: ["image", "segmentation1", "segmentation2"]
+    dtypes: ${use_dtypes}
   val_dataset:
     _target_: bioblue.dataset.DeepsunSegmentationDataset
-    partition: "train"
-    dtypes: ["image", "segmentation1", "segmentation2"]
+    partition: "test"
+    dtypes: ${use_dtypes}  
+  test_dataset: ${dataset.val_dataset}
