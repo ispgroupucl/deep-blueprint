@@ -3,6 +3,7 @@ import pytorch_lightning as pl
 import matplotlib.pyplot as plt
 from pathlib import Path
 import torch
+import torch.nn.functional as F
 import cv2
 from torchmetrics.functional.classification import iou
 from pytorch_lightning.metrics.utils import to_categorical
@@ -75,7 +76,18 @@ class PlotTrainCallback(pl.Callback):
         img = batch[self.input].cpu()
         bs = img.shape[0]
         segmentation = pl_module(batch)
-        segmentation = to_categorical(segmentation).cpu()
+
+        # print("on_train_batch_end: ", segmentation.shape, torch.unique(segmentation[0]))
+
+        # segmentation = F.softmax(segmentation, dim=1)
+
+
+        # print("on_train_batch_end AFTER SOFTMAX: ", segmentation.shape, torch.unique(segmentation[0]))
+
+        segmentation = to_categorical(segmentation,argmax_dim=1).cpu()
+        # print("on_train_batch_end AFTER to_categorical: ", segmentation.shape, torch.unique(segmentation[0]))
+
+
         fig, axs = plt.subplots(ncols=bs, figsize=(bs * 5, 10), squeeze=False)
         for i, ax in enumerate(axs[0]):
             ax.imshow(img[i], cmap="gray")

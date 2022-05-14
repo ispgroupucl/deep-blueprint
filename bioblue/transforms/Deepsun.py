@@ -9,7 +9,7 @@ class DeepsunCropNonEmptyMaskIfExists(CropNonEmptyMaskIfExists):
     def __init__(self, height, width, ignore_values=None, ignore_channels=None, always_apply=False, p=1.0):
         
         super().__init__(height, width, ignore_values=None, ignore_channels=None, always_apply=False, p=1.0)
-        print('Init')
+        # print('Init')
         
     def __call__(self, *args, force_apply=False, **kwargs):
         # print(kwargs)

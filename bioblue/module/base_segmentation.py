@@ -39,7 +39,8 @@ class BaseSegment(pl.LightningModule):
             print(loss["_target_"])
             if (loss["_target_"] == "segmentation_models_pytorch.losses.dice.DiceLoss") or (
                 loss["_target_"] == "bioblue.loss.GeneralizedDiceLoss" ) or (
-                loss["_target_"] == "monai.losses.DiceLoss"   
+                loss["_target_"] == "monai.losses.DiceLoss"   ) or (
+                loss["_target_"] == "bioblue.loss.GDiceLoss"   
                 ):
                 self.loss = instantiate(loss)
             else:
@@ -68,28 +69,42 @@ class BaseSegment(pl.LightningModule):
 
         return seg
 
+    # def common_step(self, batch):
+    #     seg = batch["segmentation"].to(torch.long)  # .to(torch.float)
+    #     # seg = batch["segmentation"].to(torch.float)  # .to(torch.float)
+    #     print("seg: ", seg.shape, 'uniques : ', torch.unique(seg))
+    #     # print(self.classes)
+    #     # seg = F.one_hot(seg, len(self.classes)+1)
+    #     seg = F.one_hot(seg, self.segmenter.n_classes)  # N,H*W -> N,H*W, C
+    #     seg = seg.permute(0, 3, 1, 2)
+    #     print(seg.shape)
+
+    #     # seg[seg == 2] = 0
+    #     input_sample = {}
+    #     print(self.input_format)
+    #     for dtype in self.input_format:
+    #         input_sample[dtype] = batch[dtype].to(torch.float)
+
+    #     # print(input_sample)
+    #     seg_hat = self(input_sample)
+    #     print("seg_hat: ", seg_hat.shape, 'uniques : ', torch.unique(seg_hat))        
+    #     return seg, seg_hat
+
     def common_step(self, batch):
         seg = batch["segmentation"].to(torch.long)  # .to(torch.float)
-        print("seg: ", seg.shape, 'uniques : ', torch.unique(seg))
-        # print(self.classes)
-        seg = F.one_hot(seg, len(self.classes)+1)  # N,H*W -> N,H*W, C
-        seg = seg.permute(0, 3, 1, 2)
-        print(seg.shape)
 
-        # seg[seg == 2] = 0
         input_sample = {}
-        print(self.input_format)
         for dtype in self.input_format:
             input_sample[dtype] = batch[dtype].to(torch.float)
 
-        print(input_sample)
         seg_hat = self(input_sample)
-        print("seg_hat: ", seg_hat.shape, 'uniques : ', torch.unique(seg_hat))        
+        
         return seg, seg_hat
 
     def training_step(self, batch, batch_idx):
         seg, seg_hat = self.common_step(batch)
         # print(torch.unique(seg), torch.unique(seg_hat))
+        # print(self.loss.include_background)
         loss = self.loss(seg_hat, seg)
         self.log("train_loss", loss, on_epoch=True, on_step=False, logger=True)
         for name, iou in self.iou.items():

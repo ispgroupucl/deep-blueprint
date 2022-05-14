@@ -8,18 +8,39 @@ trainer:
 
 
 module:
+  # lr: 1.
+  # optimizer: 'torch.optim.SGD'
+  # loss:
+  #   _target_: bioblue.loss.GDiceLoss
+  #   apply_nonlin : softmax
+  #   # to_onehot_y : true
+
+  # lr: 1.e-1
+  # optimizer: 'torch.optim.SGD'
+  # loss:
+  #   _target_: bioblue.loss.TverskyLossV3
+  #   alpha: 0.3
+  #   beta: 0.7 
+  #   include_background: false
+  #   softmax: true
+  #   to_onehot_target: true
+  # ######## WORKS
+  # lr: 1.e-1
+  # optimizer: 'torch.optim.SGD'
+  # loss:
+  #   _target_: bioblue.loss.DiceLoss
+  # ######## WORKS
   lr: 1.e-5
-  optimizer: 'torch.optim.SGD'
   loss:
-    # _target_: torch.nn.CrossEntropyLoss # <--- WORKS
-    _target_: bioblue.loss.GeneralizedDiceLoss
-    include_background: false
-    softmax: true
-    # to_onehot_y : true
-  scheduler:
-    _target_: torch.optim.lr_scheduler.MultiStepLR
-    milestones: [10, 30, 50]
-    gamma: 0.1
+    _target_: torch.nn.CrossEntropyLoss # <--- WORKS
+    # ignore_index: 0
+  class_weights: [1,20,20]
+  # ########
+
+  # scheduler:
+  #   _target_: torch.optim.lr_scheduler.MultiStepLR
+  #   milestones: [10, 30, 50]
+  #   gamma: 0.1
 
 model:
   input_format: ["image"]

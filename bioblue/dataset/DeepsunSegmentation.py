@@ -53,11 +53,11 @@ class DeepsunSegmentationDataset(Dataset):
         self.files = []
         self.masks_lists = { t: sorted((self.root_dir / t).iterdir()) for t in self.target_types}
 
-        print(self.root_dir / self.main_dtype)
-        print(len(sorted(list((self.root_dir / self.main_dtype).iterdir()))))
-        for t in self.target_types:
-            print(self.root_dir / t)
-            print(len(self.masks_lists[t]))
+        # print(self.root_dir / self.main_dtype)
+        # print(len(sorted(list((self.root_dir / self.main_dtype).iterdir()))))
+        # for t in self.target_types:
+        #     print(self.root_dir / t)
+        #     print(len(self.masks_lists[t]))
         
         # for i, file in enumerate(sorted((self.root_dir / self.main_dtype).iterdir())[:]):
         for i, file in enumerate(sorted((self.root_dir / self.main_dtype).iterdir())):
