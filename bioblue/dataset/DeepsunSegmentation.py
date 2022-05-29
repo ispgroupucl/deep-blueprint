@@ -89,27 +89,20 @@ class DeepsunSegmentationDataset(Dataset):
         img_name =  self.files[index]["image"]
         # try:
         sample["image"] = (io.imread(img_name)).astype(float) # load image from directory with skimage
-        # print(sample["image"].dtype)
-        # except Exception as e:
-        #     log.debug(f"{self.main_dtype} {index} {img_name}")
-        #     log.debug(f"{e}")
+
+
+        # #### V1
+        # # pick one segmentation according to distribution
+        # segmentation_type = random.choice(self.target_types)
+        # # try:
+        # seg_file = self.files[index][segmentation_type]
+        # sample["segmentation"] = (io.imread(seg_file)).astype(float) # load corresponding segmentation mask
         
-        # pick one segmentation according to distribution
-        
-        segmentation_type = random.choice(self.target_types)
-        # try:
-        seg_file = self.files[index][segmentation_type]
-        sample["segmentation"] = (io.imread(seg_file)).astype(float) # load corresponding segmentation mask
-
-
-
-
-        # print(np.unique(sample["segmentation"]))
-
-        # print(sample["segmentation"].dtype)
-        # except Exception as e:
-        #     log.debug(f"{self.main_dtype} {index} {segmentation_type}")
-        #     log.debug(f"{e}")
+        # #### V2
+        # sample["segmentation"] = np.array([io.imread(self.files[index][t]).astype(float) 
+        #                             for t in self.target_types ]) if len(self.target_types)> 1 else io.imread(self.files[index][self.target_types[0]]).astype(float)
+        sample["segmentation"] = np.array([io.imread(self.files[index][t]).astype(float) 
+                                    for t in self.target_types ])
 
         if self.transforms is not None and do_transform:
             sample = self.transforms(**sample)
