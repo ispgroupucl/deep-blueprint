@@ -60,7 +60,7 @@ class BaseSegment(pl.LightningModule):
                 )
 
     def predict(self, x):
-        x = self.transfer_batch_to_device(x)
+        x = self.transfer_batch_to_device(x, self.device, 0)
         return self(x)
 
     def forward(self, x):
@@ -92,6 +92,7 @@ class BaseSegment(pl.LightningModule):
     #     return seg, seg_hat
 
     def common_step(self, batch):
+        # print(batch['segmentation'])
         seg = batch["segmentation"].to(torch.long)  # .to(torch.float)
 
         input_sample = {}
