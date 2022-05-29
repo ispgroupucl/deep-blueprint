@@ -25,17 +25,25 @@ module:
   #   softmax: true
   #   to_onehot_target: true
   # ######## WORKS
-  # lr: 1.e-1
+  # lr: 1.e-4
   # optimizer: 'torch.optim.SGD'
   # loss:
   #   _target_: bioblue.loss.DiceLoss
+  #   include_background: false
+  #   softmax: true
+  #   to_onehot_target: true
   # ######## WORKS
   lr: 1.e-5
+  optimizer: 'torch.optim.Adam'
   loss:
     _target_: torch.nn.CrossEntropyLoss # <--- WORKS
     # ignore_index: 0
-  class_weights: [1,20,20]
+  class_weights: [1,50,50]
   # ########
+  scheduler:
+      _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+      factor: 0.1
+      patience: 5
 
   # scheduler:
   #   _target_: torch.optim.lr_scheduler.MultiStepLR
@@ -51,42 +59,44 @@ model:
   model_cfg:
     _target_: bioblue.model.ModelConfig
   block: double
-  architecture:
-    first: 32
-    enc:
-      width: [32, 64, 128, 256, 512, 512, 512]
-      repeat: [1,1,1,1,1,1,1]
-      # width: [32, 64, 128, 256, 512]
-      # repeat: [1,1,1,1,1]
-    dec:
-      # width: [ 256, 128, 64, 32]
-      # repeat: [ 1, 1, 1, 1]
-      width: [512, 512, 256, 128, 64, 32]
-      repeat: [1, 1, 1, 1, 1, 1]
-
   # architecture:
-  #   first: 32 
+  #   first: 32
   #   enc:
-  #     width: [16, 32, 48, 96]
-  #     repeat: [2, 3, 3, 4]
+  #     width: [32, 64, 128, 256, 512, 512, 512]
+  #     repeat: [1,1,1,1,1,1,1]
+  #     # width: [32, 64, 128, 256, 512]
+  #     # repeat: [1,1,1,1,1]
   #   dec:
-  #     width: [48, 32, 32]
-  #     repeat: [2, 2, 1]
+  #     # width: [ 256, 128, 64, 32]
+  #     # repeat: [ 1, 1, 1, 1]
+  #     width: [512, 512, 256, 128, 64, 32]
+  #     repeat: [1, 1, 1, 1, 1, 1]
+
+  architecture:
+    first: 32 
+    enc:
+      width: [16, 32, 48, 96]
+      repeat: [2, 3, 3, 4]
+    dec:
+      width: [48, 32, 32]
+      repeat: [2, 2, 1]
 
 
 use_dtypes: "???"
 
 dataset:
   _target_: bioblue.dataset.BioblueDataModule
-  data_dir: "/globalscratch/users/n/s/nsayez/deepsun_bioblue"
-  dataset_name: "All"
-  # dataset_name: "2013"
-  batch_size: 6
-  num_workers: 3
+  # data_dir: "/globalscratch/users/n/s/nsayez/deepsun_bioblue"datasets/niels/Deepsun/"
+  # dataset_name: "All"
+  data_dir: "/DATA/datasets/niels/Deepsun/"
+  dataset_name: "ManualAnnotation2"
+
+  batch_size: 8
+  num_workers: 12
   
   train_dataset:
     _target_: bioblue.dataset.DeepsunSegmentationDataset
-    partition: "test_GT"
+    partition: "train_GT"
     dtypes: ${use_dtypes}
 
     transforms:
