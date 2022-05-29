@@ -1,9 +1,10 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Optional, Type, Union
+from numpy.lib.arraysetops import isin
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from bioblue.dataset import Strategy
+from bioblue.dataset import PrepareStrategy, SetupStrategy
 from hydra.utils import instantiate
 
 log = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ class BioblueDataModule(pl.LightningDataModule):
         train_dataset: Optional[dict] = None,
         val_dataset: Optional[dict] = None,
         test_dataset: Optional[dict] = None,
-        strategies: Optional[Dict[str, Strategy]] = None,
+        strategies: Optional[Dict[str, Union[PrepareStrategy, SetupStrategy]]] = None,
         batch_size: int = 2,
         num_workers: int = 1,
         **kwargs,
@@ -28,9 +29,14 @@ class BioblueDataModule(pl.LightningDataModule):
         self.val_ds = val_dataset
         self.test_ds = test_dataset
         if strategies is not None:
-            self.strategies = {
-                name: instantiate(strat) for name, strat in strategies.items()
-            }
+            self.strategies = {}
+            for name, strat in strategies.items():
+                strategy = instantiate(strat)
+                if not isinstance(strategy, (PrepareStrategy, SetupStrategy)):
+                    raise TypeError(
+                        f"{name} does not implement one of the Strategy classes"
+                    )
+                self.strategies[name] = strategy
         else:
             self.strategies = {}
         self.batch_size = batch_size
@@ -38,8 +44,9 @@ class BioblueDataModule(pl.LightningDataModule):
 
     def prepare_data(self):
         for name, strategy in self.strategies.items():
-            log.info(f"Data preparation : {name}")
-            strategy.prepare_data(self.data_dir)
+            if isinstance(strategy, PrepareStrategy):
+                log.info(f"Data preparation : {name}")
+                strategy.prepare_data(self.data_dir)
 
     def setup(self, stage=None):
         self.train_ds = instantiate(
@@ -53,8 +60,9 @@ class BioblueDataModule(pl.LightningDataModule):
         )
 
         for name, strategy in self.strategies.items():
-            log.info(f"Dataset setup: {name}")
-            strategy.setup(self.train_ds, self.val_ds, self.test_ds)
+            if isinstance(strategy, SetupStrategy):
+                log.info(f"Dataset setup: {name}")
+                strategy.setup(self.train_ds, self.val_ds, self.test_ds)
 
         log.info(f"train size: {len(self.train_ds)}; val size: {len(self.val_ds)}")
 

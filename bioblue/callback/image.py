@@ -1,4 +1,5 @@
 import logging
+from typing import Any, Optional
 import pytorch_lightning as pl
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -6,12 +7,15 @@ import torch
 import torch.nn.functional as F
 import cv2
 from torchmetrics.functional.classification import iou
-from pytorch_lightning.metrics.utils import to_categorical
+from torchmetrics.utilities.data import to_categorical
 from bioblue.plot import cm
 import numpy as np
 from tqdm.auto import tqdm
 import os
 import skimage.io as io
+from itkwidgets import view as view3d
+import ipywidgets as widgets
+from IPython.display import display
 
 log = logging.getLogger(__name__)
 
@@ -27,28 +31,50 @@ class PlotImageCallback(pl.Callback):
         dm = trainer.val_dataloaders[0]
         seen = 0
         for batch in dm:
-            segmentation = pl_module(batch)
+            segmentation = pl_module.predict(batch)
             if seen > self.num_samples:
                 break
             cat_segm = to_categorical(segmentation)
-            num_axs = cat_segm.shape[0]
-            fig, axs = plt.subplots(ncols=num_axs, figsize=(num_axs * 3, 10))
-            for i, ax in enumerate(axs):
-                ax.imshow(batch["image"][i].detach(), cmap="gray")
-                ax.imshow(
-                    cat_segm[i].cpu().detach(),
-                    cmap=cm.hsv,
-                    alpha=0.7,
-                    interpolation="none",
-                )
-                iou_value = iou(
-                    cat_segm[i].cpu().unsqueeze(0),
-                    batch["segmentation"][i].unsqueeze(0),
-                )
-                ax.set_title(f"iou={iou_value*100:.2f}%")
-                seen += 1
-            plt.show()
-            plt.close(fig)
+            bs = cat_segm.shape[0]
+            batch["_segm"] = cat_segm
+            display_batch(batch, "image", "_segm")
+            seen += bs
+
+
+class InputHistoCallback(pl.Callback):
+    def __init__(self, show_percentage=0.1, inputs=("image",), val=False) -> None:
+        self.show = show_percentage
+        self.inputs = inputs
+        self.rng = np.random.default_rng()
+        self.shown = False
+        self.val = val
+
+    def on_validation_batch_start(
+        self,
+        trainer: "pl.Trainer",
+        pl_module: "pl.LightningModule",
+        batch: Any,
+        batch_idx: int,
+        dataloader_idx: int,
+    ) -> None:
+        self.on_train_batch_start(trainer, pl_module, batch, batch_idx, dataloader_idx)
+
+    def on_train_batch_start(
+        self,
+        trainer: "pl.Trainer",
+        pl_module: "pl.LightningModule",
+        batch: Any,
+        batch_idx: int,
+        dataloader_idx: int,
+    ) -> None:
+        if self.rng.random() > self.show:
+            return
+        fig, axs = plt.subplots(len(self.inputs), figsize=(10, 3), squeeze=False)
+        for ax, input in zip(axs[0], self.inputs):
+            flat_batch = batch[input].cpu().flatten().to(torch.uint8).numpy()
+            ax.hist(flat_batch, bins=256, range=(0, 255))
+        plt.show()
+        plt.close(fig)
 
 
 class PlotTrainCallback(pl.Callback):
@@ -59,6 +85,13 @@ class PlotTrainCallback(pl.Callback):
         self.shown = False
         self.val = val
 
+
+    def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx) :
+        if self.val:
+            self.on_train_batch_end(
+                trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+            )
+   
     def on_validation_batch_end(
         self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
     ):
@@ -75,26 +108,30 @@ class PlotTrainCallback(pl.Callback):
         log.debug(outputs)
         img = batch[self.input].cpu()
         bs = img.shape[0]
-        segmentation = pl_module(batch)
-
+        
+        for dtype in batch:
+            batch[dtype] = batch[dtype].squeeze(1).to(torch.float)
+        segmentation = pl_module.predict(batch) 
+        # segmentation = pl_module.predict(torch.squeeze(batch,1))       
         # print("on_train_batch_end: ", segmentation.shape, torch.unique(segmentation[0]))
-
         # segmentation = F.softmax(segmentation, dim=1)
-
-
         # print("on_train_batch_end AFTER SOFTMAX: ", segmentation.shape, torch.unique(segmentation[0]))
 
         segmentation = to_categorical(segmentation,argmax_dim=1).cpu()
         # print("on_train_batch_end AFTER to_categorical: ", segmentation.shape, torch.unique(segmentation[0]))
 
+        # segmentation = to_categorical(segmentation).cpu()
+        batch["_segm"] = segmentation
+        display_batch(batch, self.input, "_segm")
+        del batch["_segm"]  # really needed ?
 
-        fig, axs = plt.subplots(ncols=bs, figsize=(bs * 5, 10), squeeze=False)
-        for i, ax in enumerate(axs[0]):
-            ax.imshow(img[i], cmap="gray")
-            ax.imshow(segmentation[i], cmap=cm.hsv, alpha=0.7, interpolation="none")
-            ax.set_title(f"output")
-        plt.show()
-        plt.close(fig)
+    def on_test_batch_start(
+        self, trainer, pl_module, batch, batch_idx, dataloader_idx
+    ):
+        if self.val:
+            self.on_train_batch_start(
+                trainer, pl_module, batch, batch_idx, dataloader_idx
+            )
 
     def on_validation_batch_start(
         self, trainer, pl_module, batch, batch_idx, dataloader_idx
@@ -113,36 +150,54 @@ class PlotTrainCallback(pl.Callback):
         self.shown = True
         input_format = pl_module.input_format  # FIXME : create ABC for this
         for input_key in input_format:
-            img = batch[input_key]
-            bs = img.shape[0]
-            fig, axs = plt.subplots(ncols=bs, figsize=(bs * 5, 10), squeeze=False)
-            for i, ax in enumerate(axs[0]):
-                ax.imshow(img[i].cpu(), cmap="gray")
-                ax.set_title(f"{input_key}")
-            plt.show()
-            plt.close(fig)
+            display_batch(batch, image_key=input_key)
 
         output_format = pl_module.output_format  # FIXME : as above
-        for input_key in output_format:
-            img = batch[input_key].cpu()
-            bs = img.shape[0]
-            log.debug(f"segmentation : {np.unique(img)}")
-            fig, axs = plt.subplots(ncols=bs, figsize=(bs * 5, 10), squeeze=False)
-            for i, ax in enumerate(axs[0]):
-                ax.imshow(batch[self.input][i].cpu(), cmap="gray")
-                ax.imshow(img[i], cmap=cm.hsv, alpha=0.7, interpolation="none")
-                title = batch["_title"][i] if "_title" in batch else ""
-                ax.set_title(f"{input_key} {title}")
-            plt.show()
-            plt.close(fig)
+        for output_key in output_format:
+            display_batch(batch, image_key=self.input, segm_key=output_key)
+
+
+def display_batch(batch, image_key, segm_key=None, title_key="_title"):
+    image = batch[image_key].cpu()
+    bs = image.shape[0]
+    log.debug(image.ndim)
+    if image.ndim == 3:
+        s = ...
+    elif image.ndim == 4:
+        s = image.shape[1] // 2
+    if image.ndim == 3:
+        fig, axs = plt.subplots(ncols=bs, figsize=(bs * 5, 10), squeeze=False)
+        for i, ax in enumerate(axs[0]):
+            img = image[i, :, s, :].cpu()
+            ax.imshow(img, cmap="gray")
+            key_title = image_key
+            if segm_key is not None:
+                mask = batch[segm_key][i, :, s, :].cpu()
+                ax.imshow(mask, cmap=cm.hsv, alpha=0.7, interpolation="none")
+                key_title = segm_key
+            title = batch[title_key][i] if title_key in batch else ""
+            ax.set_title(f"{key_title} {title}")
+        plt.show()
+        plt.close(fig)
+    elif image.ndim == 4:
+        children = []
+        for i in range(bs):
+            img = image[i].cpu()
+            if segm_key is not None:
+                mask = batch[segm_key][i].cpu()
+            else:
+                mask = None
+            children.append(view3d(image=img, label_image=mask))
+        tabs = widgets.Tab(children)
+        display(tabs)
 
        
 class SaveVolumeCallback(pl.Callback):
-    def __init__(self, val=True, train=True, test=False):
+    def __init__(self, val=True, train=True, test=False, period=5):
         self.val = val
         self.train = train
         self.test = test
-        self.period = 5
+        self.period = period
         self.ds_files = None
         self.ds_reverse_index = None
         self.ds_array_index = None
@@ -161,17 +216,23 @@ class SaveVolumeCallback(pl.Callback):
             file_index = dataset.reverse_index["image"][i]
             filename = Path(dataset.files[file_index]).stem
             array_index = dataset.array_index["image"][i]
-            save_name = Path(f"images/volumes/{type}/{filename}/{array_index:04}.png")
+            save_name = Path(
+                f"images/volumes/{type}/{filename}"
+            )  # / {array_index:04}.png")
             unsqueezed_sample = {}
             for k, s in sample.items():
                 unsqueezed_sample[k] = torch.tensor(s).unsqueeze(0)
-            segm = to_categorical(pl_module(unsqueezed_sample))
+            segm = to_categorical(pl_module.predict(unsqueezed_sample))
             log.debug(f"{segm.device} {segm.shape}")
             segm = segm[0].cpu().to(torch.uint8).numpy()
             save_name.parent.mkdir(parents=True, exist_ok=True)
+            if segm.ndim == 2:
+                write_image(save_name / f"{array_index:04}.png", segm)
+            else:
+                write_volume(save_name, segm)
             # original_shape = dataset.original_shape["image"][file_index]
             # segm = cv2.resize(segm, original_shape, interpolation=cv2.INTER_NEAREST)
-            cv2.imwrite(str(save_name), segm)
+            # cv2.imwrite(str(save_name), segm)
 
         if hasattr(dataset, "reset"):
             dataset.reset()
@@ -179,14 +240,14 @@ class SaveVolumeCallback(pl.Callback):
     def on_validation_batch_end(
         self, trainer: pl.Trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
     ):
-        if trainer.running_sanity_check:
+        if trainer.sanity_checking:
             return
         epoch = trainer.current_epoch
         log.debug(f"train epoch {epoch}")
         if epoch % self.period == 0:
             batch_size = batch["segmentation"].shape[0]
             start_idx = batch_idx * batch_size
-            segmentation = pl_module(batch)
+            segmentation = pl_module.predict(batch)
             segmentation = to_categorical(segmentation).cpu().to(torch.uint8).numpy()
             log.debug(f"{batch_idx} {start_idx}")
             log.debug(f"{segmentation.shape} {np.max(segmentation)}")
@@ -196,12 +257,14 @@ class SaveVolumeCallback(pl.Callback):
                 filename = Path(self.ds_files[file_index]).stem
                 array_index = self.ds_array_index["image"][i]
                 save_name = Path(
-                    f"images/volumes/epoch{epoch}/{filename}/{array_index:04}.png"
+                    f"images/volumes/epoch{epoch}/{filename}"  # /{array_index:04}.png"
                 )
-                save_name.parent.mkdir(parents=True, exist_ok=True)
+                if segm.ndim == 2:
+                    write_image(save_name / f"{array_index:04}.png", segm)
+                elif segm.ndim == 3:
+                    write_volume(save_name, segm)
 
-                cv2.imwrite(str(save_name), segm)
-                log.debug(f"written slice to {save_name}")
+                log.debug(f"written image or volume to {save_name}")
 
     def on_train_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
         if self.train:
@@ -221,7 +284,9 @@ class SavePredictionMaskCallback(pl.Callback):
 
         
     def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx) -> None:
-        if trainer.running_sanity_check:
+        # if trainer.running_sanity_check:
+        #     return    
+        if trainer.sanity_checking:
             return
         
         segmentation = pl_module(batch)
@@ -237,3 +302,15 @@ class SavePredictionMaskCallback(pl.Callback):
 
             io.imsave(self.output_dir / name, segmentation[i], check_contrast=False)
             
+def write_image(filename, image):
+    filename.parent.mkdir(parents=True, exist_ok=True)
+    res = cv2.imwrite(str(filename), image)
+    if res is False:
+        raise RuntimeError("CV2 imwrite failed to save image.")
+
+
+def write_volume(dirpath, volume):
+    for index in range(volume.shape[-1]):
+        filename = dirpath / f"{index:04}.png"
+        write_image(filename, volume[:, :, index])
+

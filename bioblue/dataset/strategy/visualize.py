@@ -4,12 +4,12 @@ import logging
 from pathlib import Path
 import matplotlib.pyplot as plt
 
-from . import Strategy
+from . import SetupStrategy
 
 log = logging.getLogger(__name__)
 
 
-class VisualizeStrategy(Strategy):
+class VisualizeStrategy(SetupStrategy):
     def __init__(self, visualize=None, train=1, val=1, test=1):
         self.visualize = visualize
         self.train = train

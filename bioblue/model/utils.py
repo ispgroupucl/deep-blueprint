@@ -5,6 +5,7 @@ from .blocks import create_cba, get_all_blocks
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from functools import partial
 
 
 class ModelConfig:
@@ -22,6 +23,28 @@ class ModelConfig:
         self.fc = nn.Linear
 
         self.conv_t = nn.ConvTranspose2d
+
+        self.dropout = nn.Dropout2d
+        self.upsampling = nn.UpsamplingBilinear2d
+        self.max_pool = F.max_pool2d
+        self.zeropad = nn.ZeroPad2d
+        self.dim = 2
+
+
+class Model3dConfig:
+    """Contains the config for a 3d model."""
+
+    def __init__(self) -> None:
+        self.conv = nn.Conv3d
+        self.conv_t = nn.ConvTranspose3d
+        self.bn = nn.BatchNorm3d
+        self.act = nn.LeakyReLU
+        self.fc = nn.Linear
+        self.dropout = nn.Dropout3d
+        self.upsampling = partial(nn.Upsample, mode="trilinear", align_corners=True)
+        self.max_pool = F.max_pool3d
+        self.zeropad = partial(nn.ConstantPad3d, value=0)
+        self.dim = 3
 
 
 class FreezableBatchNorm2d(nn.BatchNorm2d):
@@ -95,6 +118,7 @@ class ConvBlock(nn.Module):
         self.concatenate = concatenate
         self.conv_transpose = conv_transpose
         self.last_only = last_only
+        self.model_cfg = model_cfg
 
         # Block
         dropout, sddrop = drop
@@ -111,7 +135,9 @@ class ConvBlock(nn.Module):
             sddrop=sddrop,
         )
         self.drop = (
-            nn.Dropout2d(dropout, inplace=False) if dropout > 0.0 else lambda xx: xx
+            model_cfg.dropout(dropout, inplace=False)
+            if dropout > 0.0
+            else lambda xx: xx
         )
 
         # Pooling
@@ -122,9 +148,11 @@ class ConvBlock(nn.Module):
         self.pool_size = 2
         if pool == "up":
             upsampling = (
-                nn.ConvTranspose2d(width, width, self.pool_size, stride=2)
+                model_cfg.conv_t(width, width, self.pool_size, stride=2)
                 if self.conv_transpose
-                else nn.UpsamplingBilinear2d(scale_factor=self.pool_size)
+                else model_cfg.upsampling(
+                    scale_factor=self.pool_size, align_corners=True
+                )
             )
             # TODO: check if doing depthwise wouldn't be a solution
             CBA = create_cba(model_cfg)
@@ -142,7 +170,7 @@ class ConvBlock(nn.Module):
         # Pooling
         if self.pool is not None:
             if self.pool == "max":
-                nx = F.max_pool2d(nx, self.pool_size)
+                nx = self.model_cfg.max_pool(nx, self.pool_size)
             else:  # pool == "up"
                 nx = self.up_block(nx)
         return (conv_out, nx) if not self.last_only else nx

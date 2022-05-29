@@ -1,16 +1,40 @@
-from typing import List, Union
+from typing import Dict, List, Optional, Union
 import numpy as np
 import logging
 from pathlib import Path
 
-from . import Strategy
+from . import SetupStrategy, PrepareStrategy
 
 log = logging.getLogger(__name__)
 
 
-class KFoldStrategy(Strategy):
+class SplitStrategy(PrepareStrategy):
+    def __init__(
+        self,
+        fold: int,
+        folds: int = 5,
+        input_partition="train",
+        train: Optional[float] = 0.8,
+        val: Optional[float] = None,
+        test: Optional[float] = 0.2,
+    ) -> None:
+        assert 0 <= fold < folds
+        self.fold = fold
+        self.folds = folds
+        self.train_size = train
+        self.val_size = val
+        self.test_size = test
+
+    def write_files(
+        self, data_dir: Path, latest_files: Dict[str, Dict[str, List[Path]]]
+    ) -> Dict[str, Dict[str, List[Path]]]:
+        assert latest_files is not None
+        return super().write_files(data_dir, latest_files)
+
+
+class KFoldStrategy(SetupStrategy):
     def __init__(self, fold, folds=5) -> None:
-        assert fold < folds
+        assert 0 <= fold < folds
         self.fold = fold
         self.folds = folds
 
@@ -32,11 +56,11 @@ class KFoldStrategy(Strategy):
             f"Split #{self.fold+1}/{self.folds} : "
             f"{len(train_ds)} samples for train and {len(val_ds)} for validation."
             f" (starting from {self.fold*fold_length} to {end})"
-            f"\n training set containing {train_ds.files}"
         )
+        log.debug(f"training set containing {train_ds.files}")
 
 
-class NamedKFoldStrategy(Strategy):
+class NamedKFoldStrategy(SetupStrategy):
     def __init__(self, fold, folds: List[list]) -> None:
         assert fold < len(folds)
         super().__init__()

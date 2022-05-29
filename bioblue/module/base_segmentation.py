@@ -1,8 +1,6 @@
 import io
 from typing import Any, List
 import pytorch_lightning as pl
-import pytorch_lightning.metrics.functional as plF
-from pytorch_lightning.core.decorators import auto_move_data
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -61,7 +59,10 @@ class BaseSegment(pl.LightningModule):
                     num_classes=len(self.classes) + 1, class_index=i
                 )
 
-    @auto_move_data
+    def predict(self, x):
+        x = self.transfer_batch_to_device(x)
+        return self(x)
+
     def forward(self, x):
         for dtype in x:
             x[dtype] = x[dtype].unsqueeze(1).to(torch.float)

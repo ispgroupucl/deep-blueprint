@@ -1,0 +1,34 @@
+# @package _global_
+defaults:
+ - override /hydra/launcher: submitit_slurm
+
+gpus: [0]
+trainer:
+  max_epochs: 50
+  gpus: ${gpus}
+  auto_scale_batch_size: false
+
+dataset:
+  data_dir: "${oc.env:HOME}/global/data"
+hydra:
+  # sweep:                                                                                                                                                                                                   
+  #     dir: ${oc.env:HOME}/global/multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  #     subdir: ${hydra.job.num}
+  job:
+    env_set:
+      MLFLOW_S3_ENDPOINT_URL: "https://minio.sarriette.my.to"
+      MLFLOW_TRACKING_URI: "https://sarriette.my.to"
+      MLFLOW_TRACKING_USERNAME: "victor"
+      MLFLOW_TRACKING_PASSWORD: "GrandeOurse"
+  launcher:
+    name: ${exp}
+    timeout_min: 30
+    cpus_per_task: 12
+    tasks_per_node: 1
+    signal_delay_s: 120
+    max_num_timeout: 20
+    mem_gb: 32
+    nodes: 1
+    partition: gpu
+    gres: "gpu:TeslaA100:1"
+    # qos: interactive

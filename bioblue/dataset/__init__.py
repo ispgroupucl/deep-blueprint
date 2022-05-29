@@ -1,4 +1,4 @@
-from .numpy import MultipleNumpyDataset
+from .numpy import MultipleNumpyDataset, SummaryNumpyDataset
 from .synthetic import *
 from .thresholdable import *
 from .strategy import *

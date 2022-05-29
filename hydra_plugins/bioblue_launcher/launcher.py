@@ -47,6 +47,7 @@ class SlurmLauncherConfig:
     gpu_name: str = ""
     gpus: int = 1
     partition: str = "gpu"
+    mail: str = "victor.joos@uclouvain.be"
     additional_sbatch: list = field(default_factory=list)
 
 
@@ -113,7 +114,7 @@ class SlurmLauncher(BioblueLauncher):
             }
             with open(sweep_dir / ".slurm" / f"input_{idx}.pkl", "wb") as pkl_file:
                 dill.dump(
-                    job_params, pkl_file, protocol=dill.HIGHEST_PROTOCOL, recurse=True,
+                    job_params, pkl_file, protocol=dill.HIGHEST_PROTOCOL, recurse=False,
                 )
             input_file = sweep_dir / ".slurm" / f"input_{idx}.pkl"
             output_file = sweep_dir / ".slurm" / f"output_{idx}.pkl"

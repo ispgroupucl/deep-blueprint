@@ -8,12 +8,12 @@ import hashlib
 from minio import Minio
 from minio.error import NoSuchKey
 
-from . import Strategy
+from . import PrepareStrategy
 
 log = logging.getLogger(__name__)
 
 
-class DownloadStrategy(Strategy):
+class DownloadStrategy(PrepareStrategy):
     def __init__(self) -> None:
         pass
 

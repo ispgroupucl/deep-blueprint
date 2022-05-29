@@ -1,0 +1,1 @@
+poetry run bioblue -m "server=$(hostname --short)" "$@"

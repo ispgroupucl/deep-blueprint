@@ -1,4 +1,6 @@
+from typing import Dict, List
 from numba import njit
+from scipy.sparse import data
 from skimage.filters.thresholding import threshold_multiotsu
 from bioblue.dataset.numpy import NpzWriter
 from pathlib import Path
@@ -8,14 +10,15 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 import numpy as np
-from . import Strategy
+
+from . import PrepareStrategy
 from bioblue import fibers
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class FiberCropStrategy(Strategy):
+class FiberCropStrategy(PrepareStrategy):
     def __init__(
         self, input_dtype="image", partition="train", crop_size=256, grid_size=200,
     ) -> None:
@@ -67,9 +70,11 @@ class FiberCropStrategy(Strategy):
     #             zf = self.zf_dict.set_default(idx_name, NpzWriter(filename))
     #             zf.add(crop)
 
-    def prepare_data(self, data_dir: Path) -> None:
-        if (data_dir / self.partition / self.input_dtype).exists():
-            return  # TODO : always exits...
+    def write_files(
+        self, data_dir: Path, latest_files: Dict[str, Dict[str, List[Path]]]
+    ) -> Dict[str, Dict[str, List[Path]]]:
+        raise NotImplementedError("Not yet part of new-way-of-working")
+        filenames = []
         for np_file in (data_dir / self.partition / self.input_dtype).iterdir():
             log.debug(f"processing {np_file.name}")
             sample = np.load(np_file)
@@ -88,6 +93,7 @@ class FiberCropStrategy(Strategy):
                             / f"{np_file.stem}_{idx_name}.npz"
                         )
                         if idx_name not in zf_dict:
+                            filenames.append(filename.relative_to(data_dir))
                             log.debug(f"creating new writer for {idx_name}")
                             zf_dict[idx_name] = NpzWriter(filename)
                         zf = zf_dict[idx_name]
@@ -97,7 +103,81 @@ class FiberCropStrategy(Strategy):
                 zf.close()
 
 
-class FiberSegStrategy(Strategy):
+class FiberCrop3dStrategy(FiberCropStrategy):
+    def index_generator(self, vol):
+        xx, yy, zz = np.mgrid[
+            self.crop_size // 2 : vol.shape[0]
+            - self.crop_size // 2 : self.grid_size // 2,
+            self.crop_size // 2 : vol.shape[1]
+            - self.crop_size // 2 : self.grid_size // 2,
+            self.crop_size // 2 : vol.shape[2]
+            - self.crop_size // 2 : self.grid_size // 2,
+        ]
+        xx, yy, zz = xx.flatten(), yy.flatten(), zz.flatten()
+        return zip(xx, yy, zz)
+
+    def prepare_crop(self, index, vol):
+        x, y, z = index
+        idx_name = f"{x}_{y}_{z}"
+        crop = vol[
+            x - self.crop_size // 2 : x + self.crop_size // 2,
+            y - self.crop_size // 2 : y + self.crop_size // 2,
+            z - self.crop_size // 2 : z + self.crop_size // 2,
+        ]
+        log.debug(f"crop min {crop.min()}")
+        if crop.min() < 55:  # TODO : don't use constant here
+            return idx_name, None
+
+        basis, confidence = fibers.orientation_3d(crop, num=500)
+        log.debug(f"confidence {confidence}")
+        if confidence < 0.70:
+            return idx_name, None
+        try:
+            rotated_crop = fibers.rotate_crop3d(
+                3 * (self.crop_size,), (x, y, z), vol, basis
+            )
+        except ValueError:
+            return idx_name, None
+        if rotated_crop.min() < 55:
+            return idx_name, None
+
+        return idx_name, rotated_crop
+
+    def write_files(
+        self, data_dir: Path, summary: Dict[str, Dict[str, List[Path]]]
+    ) -> Dict[str, Dict[str, List[Path]]]:
+        filenames = []
+        if summary:
+            latest_files = summary[self.partition][self.input_dtype]
+        else:
+            latest_files = (data_dir / self.partition / self.input_dtype).iterdir()
+        for np_file in latest_files:
+            log.debug(f"processing {np_file.name}")
+            sample = np.load(np_file)
+            # Fill complete volume, HEAVY !!
+            vol = np.empty((*sample[sample.files[0]].shape, len(sample)))
+            for i, slice_name in enumerate(sample):
+                slice = sample[slice_name]
+                vol[:, :, i] = slice
+            indexes = list(self.index_generator(vol))
+            log.debug(f"number of crops {len(indexes)}")
+            for index in indexes:
+                idx_name, crop = self.prepare_crop(index, vol)
+                log.debug(f"processing crop {idx_name}")
+                if crop is not None:
+                    filename: Path = (
+                        data_dir
+                        / self.partition
+                        / self.input_dtype
+                        / f"{np_file.stem}_{idx_name}.npz"
+                    )
+                    filenames.append(filename.relative_to(data_dir))
+                    np.savez_compressed(filename, crop)
+
+        return {self.partition: {self.input_dtype: filenames}}
+
+
+class FiberSegStrategy(PrepareStrategy):
     def __init__(
         self, input_dtype="image", partition="train", dtype="segmentation"
     ) -> None:
@@ -105,17 +185,37 @@ class FiberSegStrategy(Strategy):
         self.input_dtype = input_dtype
         self.dtype = dtype
 
-    def prepare_data(self, data_dir: Path) -> None:
-        for np_file in (data_dir / self.partition / self.input_dtype).iterdir():
+    def write_files(
+        self, data_dir: Path, summary: Dict[str, Dict[str, List[Path]]]
+    ) -> Dict[str, Dict[str, List[Path]]]:
+        filenames = []
+        seg_filenames = []
+        if summary:
+            latest_files = summary[self.partition][self.input_dtype]
+        else:
+            latest_files = (data_dir / self.partition / self.input_dtype).iterdir()
+        for np_file in latest_files:
             log.debug(f"processing {np_file.name}")
+            filenames.append(np_file.relative_to(data_dir))
             sample = np.load(np_file)
             filename = data_dir / self.partition / self.dtype / np_file.name
+            seg_filenames.append(filename.relative_to(data_dir))
             filename.parent.mkdir(parents=True, exist_ok=True)
             with NpzWriter(filename) as zf:
                 for slicename in sample:
-                    slice = sample[slicename]
-                    segmentation = fibers.find_1d_peaks(slice, segment_valleys=True)
+                    slice: np.ndarray = sample[slicename]
+                    log.debug(f"slice shape {slice.shape} {slice.ndim}")
+                    if slice.ndim == 2:
+                        segmentation = fibers.find_1d_peaks(slice, segment_valleys=True)
+                    else:
+                        segmentation = fibers.find_peaks_in_volume(
+                            slice, segment_valleys=True
+                        )
                     zf.add(segmentation)
+
+        return {
+            self.partition: {self.input_dtype: filenames, self.dtype: seg_filenames}
+        }
 
 
 def orientation(crop, num=100):

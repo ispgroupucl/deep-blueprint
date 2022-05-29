@@ -2,14 +2,14 @@ from bioblue.dataset.numpy import NpzWriter
 from pathlib import Path
 
 import numpy as np
-from . import Strategy
+from . import PrepareStrategy
 from bioblue import fibers
 import logging
 
 log = logging.getLogger(__name__)
 
 
-class CropStrategy(Strategy):
+class CropStrategy(PrepareStrategy):
     def __init__(self, size=None, step=None, dtype="image", partition="train"):
         self.size = size
         self.step = step

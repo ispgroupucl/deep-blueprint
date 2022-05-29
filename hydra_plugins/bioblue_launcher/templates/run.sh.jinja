@@ -10,6 +10,9 @@
 #SBATCH --mem={{ mem }}
 #SBATCH --gres="gpu{% if gpu_name %}:{% endif %}{{ gpu_name }}:{{ gpus }}"
 #SBATCH --partition={{ partition }}
+
+#SBATCH --mail-user={{ mail }}
+#SBATCH --mail-type=ALL
 {% for instruction in additional_sbatch %}
 #SBATCH --{{ instruction.name }}={{ instruction.value }}
 {% endfor %}

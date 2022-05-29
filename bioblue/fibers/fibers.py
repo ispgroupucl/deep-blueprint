@@ -45,6 +45,22 @@ def find_1d_peaks(img, rel_height=0.5, height=110, flat=False, segment_valleys=F
     return fiber_points
 
 
+def find_peaks_in_volume(
+    vol, rel_height=0.5, height=110, flat=False, segment_valleys=False
+):
+    fiber_points = np.zeros_like(vol)
+    xx, yy = np.mgrid[0 : vol.shape[1], 0 : vol.shape[2]]
+    xx, yy = xx.flatten(), yy.flatten()
+    for i, j in zip(xx, yy):
+        x = vol[:, i, j]
+        peaks, _ = signal.find_peaks(x, height=height)
+        fiber_points[peaks, i, j] = 1
+        if segment_valleys:
+            valleys, _ = signal.find_peaks(255 - x)
+            fiber_points[valleys, i, j] = 2
+    return fiber_points
+
+
 def find_peaks_along_lines(img, height=110, fix_x=True, fix_y=False):
     assert not (fix_x == True and fix_y == True)
     if fix_x:

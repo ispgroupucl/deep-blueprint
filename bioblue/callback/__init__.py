@@ -1,2 +1,8 @@
 from .mlflow import MLFlowCallback
-from .image import PlotImageCallback, PlotTrainCallback, SaveVolumeCallback, SavePredictionMaskCallback
+from .image import (
+    PlotImageCallback,
+    PlotTrainCallback,
+    SaveVolumeCallback,
+    InputHistoCallback,
+    SavePredictionMaskCallback,
+)
