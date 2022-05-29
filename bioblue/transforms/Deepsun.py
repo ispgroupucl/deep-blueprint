@@ -22,12 +22,12 @@ class DeepsunRandomRotate(SafeRotate):
     def __call__(self, *args, force_apply=False, **kwargs):
         mod_kwargs = deepcopy(kwargs)
         mod_kwargs['image'] = kwargs['image']
-        mod_kwargs['mask'] = kwargs['segmentation']
+        mod_kwargs['masks'] = kwargs['segmentation']
         del mod_kwargs['segmentation']
         processed_kwargs = super().__call__(*args, force_apply=force_apply, **mod_kwargs)
 
         kwargs['image'] = processed_kwargs['image']
-        kwargs['segmentation'] = processed_kwargs['mask']
+        kwargs['segmentation'] = processed_kwargs['masks']
         return kwargs
 
 class DeepsunRandomFlip(Flip):
@@ -37,12 +37,12 @@ class DeepsunRandomFlip(Flip):
     def __call__(self, *args, force_apply=False, **kwargs):
         mod_kwargs = deepcopy(kwargs)
         mod_kwargs['image'] = kwargs['image']
-        mod_kwargs['mask'] = kwargs['segmentation']
+        mod_kwargs['masks'] = kwargs['segmentation']
         del mod_kwargs['segmentation']
         processed_kwargs = super().__call__(*args, force_apply=force_apply, **mod_kwargs)
 
         kwargs['image'] = processed_kwargs['image']
-        kwargs['segmentation'] = processed_kwargs['mask']
+        kwargs['segmentation'] = processed_kwargs['masks']
         return kwargs
 
 
