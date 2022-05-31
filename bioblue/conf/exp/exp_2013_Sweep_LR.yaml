@@ -15,6 +15,7 @@ logger:
 
 
 module:
+  optimizer: 'torch.optim.SGD'
   # ######## WORKS
   lr: 1.e-5
   loss:
@@ -22,42 +23,6 @@ module:
     # _target_: torch.nn.BCELoss 
     # ignore_index: 0
   class_weights: [1,20]
-  # ########
-  # loss:
-  #   _target_: bioblue.loss.CombineLosses
-  #   sublossA: 
-  #     _target_: torch.nn.CrossEntropyLoss
-  #     # class_weights: [1,20,20]
-  #   sublossB: 
-  #     _target_: bioblue.loss.TverskyLossV3
-  #     alpha: 0.3
-  #     beta: 0.7
-  #     include_background: false
-  #     softmax: true
-  #     to_onehot_target: true
-  #   ce_ratio: 0.5
-  #   include_background: false
-  # class_weights: [1,20,20]
-  ##############
-  # loss:
-  #   _target_: bioblue.loss.ComboLoss  
-  #   ce_ratio: 0.5
-  #   alpha: 0.6
-  #   include_background: true
-  #   softmax: true
-  #   to_onehot_target: true
-    
-  # ########
-  # loss:
-  #   _target_: bioblue.loss.LogCosHDiceLoss
-  #   softmax: true
-  #   to_onehot_target: true
-  #   include_background: false
-
-  # scheduler:
-  #   _target_: torch.optim.lr_scheduler.MultiStepLR
-  #   milestones: [10, 30, 50]
-  #   gamma: 0.1
 
 model:
   input_format: ["image"]
@@ -84,13 +49,13 @@ use_dtypes: "???"
 dataset:
   _target_: bioblue.dataset.BioblueDataModule
   data_dir: "/DATA/datasets/niels/Deepsun/bioblue/"
-  dataset_name: "ManualAnnotation"
+  dataset_name: "2013"
   batch_size: 6
-  num_workers: 3
+  num_workers: 12
   
   train_dataset:
     _target_: bioblue.dataset.DeepsunSegmentationDataset
-    partition: "test_GT"
+    partition: "train"
     dtypes: ${use_dtypes}
 
     transforms:
@@ -105,17 +70,27 @@ dataset:
 
   val_dataset:
     _target_: bioblue.dataset.DeepsunSegmentationDataset
-    # \/!\/!\/!\/!\/!\/ When training make sure that this partition refers to folder containing ALL types of segmentation, and the folder with GT is named "test_GT"
-    # \/!\/!\/!\/!\/!\/ BUT When comparing with manual GT -> CHANGE NAME OF FOLDERS SUCH THAT the one with GT is named test and the other is named "test_training"
-    partition: "test_GT"
+    partition: "test"
     dtypes: ${use_dtypes}
     transforms:
+      - _target_: bioblue.transforms.DeepsunRandomFlip
+      - _target_: bioblue.transforms.DeepsunRandomRotate
       - _target_: bioblue.transforms.DeepsunCropNonEmptyMaskIfExists
         height: 512
         width: 512
       - _target_: bioblue.transforms.DeepsunMaskMerger
         p_add: 0.5
-  test_dataset: ${dataset.val_dataset}
+
+  test_dataset:     
+    _target_: bioblue.dataset.DeepsunSegmentationDataset
+    partition: "test_GT"
+    dtypes: ['image', 'GroundTruth']
+    transforms:
+      - _target_: bioblue.transforms.DeepsunRandomFlip
+      - _target_: bioblue.transforms.DeepsunRandomRotate
+      - _target_: bioblue.transforms.DeepsunCropNonEmptyMaskIfExists
+        height: 512
+        width: 512
 
 callbacks:
   wandb:
