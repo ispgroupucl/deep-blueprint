@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import lr_scheduler
 import logging
-
+import numpy as np
 from .metrics import IoU
 
 from hydra.utils import instantiate
@@ -92,8 +92,9 @@ class BaseSegment(pl.LightningModule):
     #     return seg, seg_hat
 
     def common_step(self, batch):
-        # print(batch['segmentation'])
-        seg = batch["segmentation"].to(torch.long)  # .to(torch.float)
+        # print(type(batch["segmentation"]))
+        # seg = batch["segmentation"].to(torch.long)  # .to(torch.float)
+        seg = batch["segmentation"][0].to(torch.long)  # .to(torch.float)
 
         input_sample = {}
         for dtype in self.input_format:
@@ -164,7 +165,8 @@ class BaseSegment(pl.LightningModule):
             optimizer=optimizer,
             lr_scheduler={
                 "scheduler": scheduler,
-                "interval": "epoch",
+                "interval": "step",
+                # "interval": "epoch",
                 "frequency": 1,
                 "reduce_on_plateau": True,
                 "monitor": "val_loss",
