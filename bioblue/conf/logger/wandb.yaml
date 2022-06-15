@@ -1,9 +1,9 @@
 # @package _global_
 logger:
-  _target_: pytorch_lightning.loggers.WandbLogger
-  name: "tmp"
-  project: 'Deepsun'
-  offline: false
-  save_dir: "."
-
+  - _target_: pytorch_lightning.loggers.WandbLogger
+      name: "tmp"
+      project: 'Deepsun'
+      offline: false
+      save_dir: "."
+      resume: 'allow'
 exp: "???"
