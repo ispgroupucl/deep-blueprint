@@ -151,7 +151,8 @@ class ConvBlock(nn.Module):
                 model_cfg.conv_t(width, width, self.pool_size, stride=2)
                 if self.conv_transpose
                 else model_cfg.upsampling(
-                    scale_factor=self.pool_size, align_corners=True
+                    scale_factor=self.pool_size
+                    # scale_factor=self.pool_size, align_corners=True
                 )
             )
             # TODO: check if doing depthwise wouldn't be a solution
