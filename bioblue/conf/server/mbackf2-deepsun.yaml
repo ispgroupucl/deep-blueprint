@@ -1,0 +1,25 @@
+# @package _global_
+
+# defaults:
+#  - override hydra/launcher: submitit_slurm
+
+
+gpus: [0]
+
+exp:
+  name: exp_2013_CombineLoss
+
+hydra:
+  launcher:
+    name: ${exp.name}
+    timeout_min: 2880
+    # timeout_min: 60
+    cpus_per_task: 12
+    tasks_per_node: 1
+    signal_delay_s: 120
+    max_num_timeout: 20
+    mem_gb: 32
+    nodes: 1
+    partition: gpu
+    gres: "gpu:TeslaA100_80:1"
+    # qos: interactive

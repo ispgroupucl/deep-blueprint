@@ -1,6 +1,6 @@
 # @package _global_
-defaults:
- - override /hydra/launcher: submitit_slurm
+# defaults:
+#  - override /hydra/launcher: submitit_slurm
 
 gpus: [0]
 trainer:

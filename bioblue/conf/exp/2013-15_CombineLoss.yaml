@@ -7,21 +7,28 @@ trainer:
   log_every_n_steps: 2
 
 logger:
-  - _target_: pytorch_lightning.loggers.WandbLogger
-    # name: 'test'
-    project: 'Deepsun'
-    save_dir: "."
+  _target_: pytorch_lightning.loggers.WandbLogger
+  # name: 'test'
+  project: 'Deepsun'
+  save_dir: "."
 
 
 
 module:
   optimizer: torch.optim.AdamW
   # ######## WORKS
-  # lr: 1.e-5
   loss:
-    _target_: torch.nn.CrossEntropyLoss # <--- WORKS
-    # _target_: torch.nn.BCELoss 
-    # ignore_index: 0
+    _target_: bioblue.loss.CombineLosses
+    sublossA: 
+      _target_: torch.nn.CrossEntropyLoss
+    sublossB: 
+      _target_: bioblue.loss.LogCosHDiceLoss
+      softmax: true
+      to_onehot_target: true
+      include_background: true
+    ce_ratio: 0.5
+    include_background: true
+  
   class_weights: [1,20]
   
   scheduler:
@@ -55,8 +62,8 @@ use_dtypes: "???"
 dataset:
   _target_: bioblue.dataset.BioblueDataModule
   data_dir: "/globalscratch/users/n/s/nsayez/deepsun_bioblue/"
-  dataset_name: "2013"
-  batch_size: 10
+  dataset_name: "All"
+  batch_size: 16
   num_workers: 12
   
   train_dataset:

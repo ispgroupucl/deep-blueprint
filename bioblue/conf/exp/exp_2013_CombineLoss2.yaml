@@ -17,11 +17,18 @@ logger:
 module:
   optimizer: torch.optim.AdamW
   # ######## WORKS
-  # lr: 1.e-5
   loss:
-    _target_: torch.nn.CrossEntropyLoss # <--- WORKS
-    # _target_: torch.nn.BCELoss 
-    # ignore_index: 0
+    _target_: bioblue.loss.CombineLosses
+    sublossA: 
+      _target_: torch.nn.CrossEntropyLoss
+    sublossB: 
+      _target_: bioblue.loss.LogCosHDiceLoss
+      softmax: true
+      to_onehot_target: true
+      include_background: true
+    ce_ratio: 0.5
+    include_background: true
+  
   class_weights: [1,20]
   
   scheduler:
