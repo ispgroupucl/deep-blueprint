@@ -1,10 +1,11 @@
 from bioblue.utils.gpu import pick_gpu
 from typing import Any, Dict, Mapping, Optional, Tuple
 from hydra.utils import instantiate
-from hydra import initialize_config_module as init_hydra, compose
+from hydra import initialize_config_module as init_hydra, compose, initialize_config_dir
+from hydra import initialize
 from hydra.core.utils import configure_log
 from mlflow.tracking.client import MlflowClient
-from omegaconf import OmegaConf, DictConfig
+from omegaconf import ListConfig, OmegaConf, DictConfig
 import mlflow
 import pytorch_lightning as pl
 from tempfile import TemporaryDirectory
@@ -52,15 +53,17 @@ def load_from_cfg(cfg: DictConfig) -> Tuple[pl.LightningModule, pl.LightningData
     return module, datamodule
 
 
-def load_from_dir(run_path, model_path=None, load_trainer=False, override=[]):
+def load_from_dir(run_path, model_path=None, load_trainer=False, override=None):
     config_path = run_path / ".hydra/config.yaml"
     cfg = OmegaConf.load(config_path)
-    
-    with init_hydra(config_module="bioblue.conf"):
-        cfg2 = compose(
-            config_name="config", overrides=override, return_hydra_config=True
-        )
-    cfg = OmegaConf.merge(cfg, cfg2)
+    if override is not None:
+
+        with init_hydra(config_module="bioblue.conf"):
+            cfg2 = compose(
+                config_name="config", overrides=override, return_hydra_config=True
+            )
+
+        cfg = OmegaConf.merge(cfg, cfg2)
 
     module_class: LightningModule = getattr(
         module, cfg.module._target_.split(".")[-1]
@@ -72,11 +75,60 @@ def load_from_dir(run_path, model_path=None, load_trainer=False, override=[]):
 
     datamodule = instantiate(cfg.dataset, _recursive_=False)
     datamodule.prepare_data()
-    datamodule.setup()
+    # datamodule.setup()
 
     trainer: Optional[pl.Trainer] = None
     if load_trainer:
-        logger = instantiate(cfg.logger)
+        # print(type(cfg.logger[0]))
+        tmp_logger = cfg.logger if type(cfg.logger) == DictConfig else cfg.logger[0]
+        logger = instantiate(tmp_logger)
+        callbacks = []
+        if isinstance(cfg.callbacks, Mapping):
+            cfg.callbacks = [cb for cb in cfg.callbacks.values()]
+        for callback in cfg.callbacks:
+            callback = instantiate(callback)
+            callback.cfg = cfg  # FIXME : ugly hack
+            callbacks.append(callback)
+
+        if isinstance(cfg.trainer.gpus, int):
+            cfg.trainer.gpus = pick_gpu(cfg.trainer.gpus)
+
+        trainer: pl.Trainer = instantiate(
+            cfg.trainer, logger=logger, default_root_dir=".", callbacks=callbacks
+        )
+
+    return cfg, model, datamodule, trainer
+
+def load_from_dir2(run_path, model_path=None, load_trainer=False, override=None):
+    config_path = run_path / ".hydra/config.yaml"
+    cfg = OmegaConf.load(config_path)
+    
+    # print(type(cfg))
+
+    with initialize_config_dir(config_dir=str(config_path.parents[0])):
+        cfg = compose(
+            config_name="config", overrides=override, return_hydra_config=True
+        )
+    
+
+    module_class: LightningModule = getattr(
+        module, cfg.module._target_.split(".")[-1]
+    )
+    if model_path is None:
+        model_path = run_path / "models/last.ckpt"
+    model = module_class.load_from_checkpoint(model_path)
+
+    # print(cfg.dataset)
+
+    datamodule = instantiate(cfg.dataset, _recursive_=False)
+    datamodule.prepare_data()
+    # datamodule.setup()
+
+    trainer: Optional[pl.Trainer] = None
+    if load_trainer:
+        # print(type(cfg.logger[0]))
+        tmp_logger = cfg.logger if type(cfg.logger) == DictConfig else cfg.logger[0]
+        logger = instantiate(tmp_logger)
         callbacks = []
         if isinstance(cfg.callbacks, Mapping):
             cfg.callbacks = [cb for cb in cfg.callbacks.values()]

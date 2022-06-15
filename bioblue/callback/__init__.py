@@ -6,4 +6,5 @@ from .image import (
     SaveVolumeCallback,
     InputHistoCallback,
     SavePredictionMaskCallback,
+    SavePredictionMaskCallback2,
 )
