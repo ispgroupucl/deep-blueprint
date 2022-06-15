@@ -38,7 +38,7 @@ class CombineLosses(nn.Module):
         loss1 = self.sublossA(inputs, targets)
         loss2 = self.sublossB(inputs, targets)
 
-        combo = (self.ce_ratio * loss1) - ((1 - self.ce_ratio) * loss2)
+        combo = (self.ce_ratio * loss1) + ((1 - self.ce_ratio) * loss2)
         
         return combo
 
