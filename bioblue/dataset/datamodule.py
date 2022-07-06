@@ -28,6 +28,9 @@ class BioblueDataModule(pl.LightningDataModule):
         self.train_ds = train_dataset
         self.val_ds = val_dataset
         self.test_ds = test_dataset
+
+        # print(self.data_dir)
+
         if strategies is not None:
             self.strategies = {}
             for name, strat in strategies.items():
@@ -82,6 +85,12 @@ class BioblueDataModule(pl.LightningDataModule):
         )
 
     def test_dataloader(self) -> DataLoader:
+        return DataLoader(
+            self.test_ds, batch_size=self.batch_size, num_workers=self.num_workers,
+            shuffle=False,
+        )
+
+    def predict_dataloader(self) -> DataLoader:
         return DataLoader(
             self.test_ds, batch_size=self.batch_size, num_workers=self.num_workers,
             shuffle=False,
