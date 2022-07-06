@@ -93,8 +93,8 @@ class BaseSegment(pl.LightningModule):
 
     def common_step(self, batch):
         # print(type(batch["segmentation"]))
-        # seg = batch["segmentation"].to(torch.long)  # .to(torch.float)
-        seg = batch["segmentation"][0].to(torch.long)  # .to(torch.float)
+        seg = batch["segmentation"].to(torch.long)  # .to(torch.float)
+        # seg = batch["segmentation"][0].to(torch.long)  # .to(torch.float)
 
         input_sample = {}
         for dtype in self.input_format:

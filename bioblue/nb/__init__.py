@@ -38,13 +38,13 @@ from bioblue.nb.image_display import MultiImageDisplay, myshow, myshow3d
 from bioblue.nb.load import load_from_cfg, load_from_runid, load_from_overrides, load_from_overrides_and_modelpath
 
 # Initialize environment variables
-with init_hydra(config_module="bioblue.conf"):
-    cfg = compose(config_name="config", return_hydra_config=True)
-    os.environ.update(cfg.hydra.job.env_set)
+# with init_hydra(config_module="bioblue.conf"):
+#     cfg = compose(config_name="config", return_hydra_config=True)
+#     os.environ.update(cfg.hydra.job.env_set)
 
 
-for logger in cfg.logger:
-    if hasattr(logger, "tracking_uri"):
-        mlflow.set_tracking_uri(logger.tracking_uri)
-        mlflow_client = MlflowClient()
-        break
+# for logger in cfg.logger:
+#     if hasattr(logger, "tracking_uri"):
+#         mlflow.set_tracking_uri(logger.tracking_uri)
+#         mlflow_client = MlflowClient()
+#         break

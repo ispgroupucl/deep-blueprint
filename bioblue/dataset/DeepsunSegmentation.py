@@ -208,7 +208,8 @@ class DeepsunSegmentationTestDataset(Dataset):
             # print(sample.keys())
             # print(np.array(sample["segmentation"]).shape)
 
-        sample["segmentation"] = [sample["segmentation"][0]]
+        # sample["segmentation"] = [sample["segmentation"][0]]
+        sample["segmentation"] = [sample["segmentation"][0]] if len(sample["segmentation"])>0 else np.zeros_like(sample["image"])
         # print("Apres", sample["segmentation"].shape)
 
         return sample

@@ -7,12 +7,13 @@
 gpus: [0]
 
 exp:
-  name: exp_2013_CombineLoss
+  # name: exp_2013_CombineLoss
+  name: classification_2002-2019
 
 hydra:
   launcher:
     name: ${exp.name}
-    timeout_min: 2880
+    timeout_min: 2880 #
     # timeout_min: 60
     cpus_per_task: 12
     tasks_per_node: 1
@@ -21,5 +22,9 @@ hydra:
     mem_gb: 32
     nodes: 1
     partition: gpu
-    gres: "gpu:TeslaA100_80:1"
+    # gres: "gpu:1"
+    # gres: "gpu:GeForceRTX2080Ti:1"
+    # gres: "gpu:TeslaA100:1" # gpu normaux
+    # gres: "gpu:TeslaA100_80:1" # mb-mil101
+    gres: "gpu:1g.10gb:1" # mb-mil102
     # qos: interactive

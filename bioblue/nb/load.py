@@ -46,9 +46,9 @@ def load_from_runid(run_id: str, ckpt_name: str = "epoch"):
     return cfg, module, datamodule
 
 
-def load_from_cfg(cfg: DictConfig) -> Tuple[pl.LightningModule, pl.LightningDataModule]:
-    datamodule = instantiate(cfg.dataset)
-    module = instantiate(cfg.module)
+def load_from_cfg(cfg: DictConfig, recursive=True) -> Tuple[pl.LightningModule, pl.LightningDataModule]:
+    datamodule = instantiate(cfg.dataset,  _recursive_=recursive)
+    module = instantiate(cfg.module, _recursive_=recursive)
 
     return module, datamodule
 
