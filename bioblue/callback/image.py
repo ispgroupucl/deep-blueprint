@@ -315,6 +315,53 @@ class SavePredictionMaskCallback2(pl.Callback):
             self.output_dir.mkdir(parents=True, exist_ok=True)
         self.reconstructed_image = []
 
+    def on_predict_batch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule", outputs: Any, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
+        if trainer.sanity_checking:
+            return
+        
+
+        batch["segmentation"] = batch["segmentation"]
+        for dtype in batch:
+            # print(batch[dtype].shape)
+            batch[dtype]=torch.squeeze(batch[dtype],1)
+
+        segmentation = pl_module(batch)
+
+        segmentation = to_categorical(segmentation).cpu().to(torch.uint8).numpy()
+
+        dataset = trainer.datamodule.test_ds
+        grid_size = dataset.grid_size
+        
+        cur_batch_size = batch["segmentation"].shape[0]
+
+
+        for i in range(cur_batch_size):
+            idx = batch_idx * self.max_batch_size + i
+
+            self.reconstructed_image.append(segmentation[i])
+            # print(len(self.reconstructed_image))
+            if len(self.reconstructed_image) == grid_size:
+                index = idx // grid_size
+                name = (dataset.files[index]["name"]).split(".")[0]+ ".png"
+
+                side = int(self.reconstructed_image[0].shape[0] * np.sqrt(grid_size))
+                # print(side)
+                dump = np.zeros((side,side)).astype(np.uint8)
+                for j, patch in enumerate(self.reconstructed_image):
+                    a = j // int(np.sqrt(grid_size))
+                    b = j % int(np.sqrt(grid_size))
+                    dump[
+                            a*patch.shape[0]: (a+1)*patch.shape[0],
+                            b*patch.shape[1]: (b+1)*patch.shape[1]
+                        ] = patch
+                
+                # print(np.unique(dump))
+                # print(self.output_dir)
+                io.imsave(self.output_dir / name, dump, check_contrast=False)
+                self.reconstructed_image = []
+            
+            # name = (dataset.files[idx]["name"]).split(".")[0]+ ".png"
+            # io.imsave(self.output_dir / name, segmentation[i], check_contrast=False)
         
     def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx) -> None:
         if trainer.sanity_checking:
