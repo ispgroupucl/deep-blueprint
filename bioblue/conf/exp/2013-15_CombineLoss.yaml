@@ -7,10 +7,10 @@ trainer:
   log_every_n_steps: 2
 
 logger:
-  _target_: pytorch_lightning.loggers.WandbLogger
-  # name: 'test'
-  project: 'Deepsun'
-  save_dir: "."
+  - _target_: pytorch_lightning.loggers.WandbLogger
+    # name: 'test'
+    project: 'Deepsun'
+    save_dir: "."
 
 
 
@@ -77,8 +77,9 @@ dataset:
       - _target_: bioblue.transforms.DeepsunCropNonEmptyMaskIfExists
         height: 512
         width: 512
-      - _target_: bioblue.transforms.DeepsunMaskMerger
-        p_add: 0.5
+      - _target_: bioblue.transforms.DeepsunRandomMaskSelector
+      # - _target_: bioblue.transforms.DeepsunMaskMerger
+      #   p_add: 0.5
         
 
   val_dataset:
@@ -95,9 +96,10 @@ dataset:
         p_add: 0.5
 
   test_dataset:     
-    _target_: bioblue.dataset.DeepsunSegmentationDataset
+    _target_: bioblue.dataset.DeepsunSegmentationTestDataset
     partition: "test_GT"
     dtypes: ['image', 'GroundTruth']
+    patch_side: 512
     transforms:
       - _target_: bioblue.transforms.DeepsunRandomFlip
       - _target_: bioblue.transforms.DeepsunRandomRotate
@@ -119,6 +121,6 @@ callbacks:
   LR_monitor:
     _target_: "pytorch_lightning.callbacks.LearningRateMonitor"
   Save_prediction:
-    _target_: 'bioblue.callback.SavePredictionMaskCallback'
+    _target_: 'bioblue.callback.SavePredictionMaskCallback2'
     output_dir: 'predictions'
     max_batch_size: ${dataset.batch_size}
