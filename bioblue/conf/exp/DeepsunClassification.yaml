@@ -47,7 +47,8 @@ module:
   #   last_epoch: -1
 
 model:
-  _target_: bioblue.model.ResNetClassifierV2
+  # _target_: bioblue.model.ResNetClassifierV2
+  _target_: bioblue.model.ResNetClassifierV3
   
   # input_format: ["image"]
   input_format: ["image", "angular_excentricity", "centroid_Lat" ]
@@ -59,6 +60,14 @@ model:
     resnet_version: '50'
     pretrained: true
     tune_fc_only: false
+    fcn_width: 500
+    fcn_num_hidden: 3
+
+
+  # architecture:
+  #   resnet_version: '50'
+  #   pretrained: true
+  #   tune_fc_only: false
   
 
 
