@@ -61,7 +61,8 @@ class ConfResNet(ModelWrapper):
         )
 
         self.classes = classes
-        self.n_classes = len(classes) + 1
+        # self.n_classes = len(classes) + 1
+        self.n_classes = len(classes)
         # print('self.classes', self.classes)
 
         self.conv_transpose = conv_transpose

@@ -25,6 +25,6 @@ hydra:
     # gres: "gpu:1"
     # gres: "gpu:GeForceRTX2080Ti:1"
     # gres: "gpu:TeslaA100:1" # gpu normaux
-    # gres: "gpu:TeslaA100_80:1" # mb-mil101
-    gres: "gpu:1g.10gb:1" # mb-mil102
+    gres: "gpu:TeslaA100_80:1" # mb-mil101
+    # gres: "gpu:1g.10gb:1" # mb-mil102
     # qos: interactive
