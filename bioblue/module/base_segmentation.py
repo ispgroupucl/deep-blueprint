@@ -165,8 +165,8 @@ class BaseSegment(pl.LightningModule):
             optimizer=optimizer,
             lr_scheduler={
                 "scheduler": scheduler,
-                "interval": "step",
-                # "interval": "epoch",
+                # "interval": "step",
+                "interval": "epoch",
                 "frequency": 1,
                 "reduce_on_plateau": True,
                 "monitor": "val_loss",

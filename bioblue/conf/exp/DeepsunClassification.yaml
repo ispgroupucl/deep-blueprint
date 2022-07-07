@@ -14,10 +14,10 @@ trainer:
 logger:
   - _target_: pytorch_lightning.loggers.CSVLogger
     save_dir: 'csv_metrics'
-  - _target_: pytorch_lightning.loggers.WandbLogger
-    # name: 'test'
-    project: 'Deepsun_classification'
-    save_dir: "."
+  # - _target_: pytorch_lightning.loggers.WandbLogger
+  #   # name: 'test'
+  #   project: 'Deepsun_classification'
+  #   save_dir: "."
 
 use_dtypes: "???"
 
@@ -47,33 +47,56 @@ module:
   #   last_epoch: -1
 
 model:
-  _target_: bioblue.model.ConfResNet
+  _target_: bioblue.model.ResNetClassifierV2
   
   # input_format: ["image"]
   input_format: ["image", "angular_excentricity", "centroid_Lat" ]
   output_format: ["class"]
 
   classes: ${use_classes}
-  
-  model_cfg:
-    _target_: bioblue.model.ModelConfig
+
   architecture:
-    first: 32
-    block_width: [32, 64, 128] 
-    num_resnet_blocks: [6,6,6]
-    cnn_input_size: ${dataset.train_dataset.transforms.0.standard_height}
-    fcn_width: 500
-    fcn_num_hidden: 3
+    resnet_version: '50'
+    pretrained: true
+    tune_fc_only: false
+  
+
 
   # _target_: bioblue.model.ConfUnet
   # model_cfg:
   #   _target_: bioblue.model.ModelConfig
   # block: double
+
+
+# model:
+#   _target_: bioblue.model.ConfResNet
+  
+#   # input_format: ["image"]
+#   input_format: ["image", "angular_excentricity", "centroid_Lat" ]
+#   output_format: ["class"]
+
+#   classes: ${use_classes}
+  
+#   model_cfg:
+#     _target_: bioblue.model.ModelConfig
+#   architecture:
+#     first: 32
+#     block_width: [32, 64, 128] 
+#     num_resnet_blocks: [6,6,6]
+#     cnn_input_size: ${dataset.train_dataset.transforms.0.standard_height}
+#     fcn_width: 500
+#     fcn_num_hidden: 3
+
+#   # _target_: bioblue.model.ConfUnet
+#   # model_cfg:
+#   #   _target_: bioblue.model.ModelConfig
+#   # block: double
   
 
 dataset:
   _target_: bioblue.dataset.BioblueDataModule
-  data_dir: "/globalscratch/users/n/s/nsayez/Classification_dataset/"
+  data_dir: "/home/sayez/Deepsun/Classification_dataset/"
+  # data_dir: "/globalscratch/users/n/s/nsayez/Classification_dataset/"
   dataset_name: "2002-2019"
   batch_size: 16
   num_workers: 12
@@ -113,14 +136,14 @@ dataset:
       # - _target_: bioblue.transforms.DeepsunImageMaskProduct
 
 callbacks:
-  wandb:
-    _target_: bioblue.callback.WandBCallback
-    log_models: false
+  # wandb:
+  #   _target_: bioblue.callback.WandBCallback
+  #   log_models: false
   model_checkpoint:
     _target_: pytorch_lightning.callbacks.ModelCheckpoint
     dirpath: "./models"
     save_last: true
-    monitor: val_meaniou
+    monitor: val_acc
     mode: max
     filename: "{epoch}-{val_meaniou:.2f}"
   LR_monitor:
