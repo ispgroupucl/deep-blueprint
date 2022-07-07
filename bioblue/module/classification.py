@@ -21,6 +21,7 @@ class BaseClassifier(pl.LightningModule):
                 loss=nn.CrossEntropyLoss,
                 optimizer_params=None,
                 scheduler=None,
+                class_weights = None,
                 batch_size=16,
                 transfer=True, 
                 tune_fc_only=True
@@ -36,6 +37,8 @@ class BaseClassifier(pl.LightningModule):
 
         if hasattr(classifier, "_target_"):
             classifier = instantiate(classifier)
+        if class_weights is not None:
+            class_weights = torch.tensor(class_weights, dtype=torch.float)
 
         # print(classifier)
 
@@ -49,8 +52,10 @@ class BaseClassifier(pl.LightningModule):
         # print(dict(self.classifier.named_children()).keys())
         # print(dict(self.classifier.named_children())['input_process'])
 
-
-        self.loss = instantiate(loss)
+        if loss['_target_'] == "torch.nn.CrossEntropyLoss":
+            self.loss =instantiate(loss,weight=class_weights)
+        else:
+            self.loss = instantiate(loss)
 
         self.optimizer_class = optimizer
         self.optimizer_params = optimizer_params if optimizer_params is not None else {}
@@ -109,7 +114,7 @@ class BaseClassifier(pl.LightningModule):
 
         # print("loss", loss)
 
-        acc = (torch.argmax(torch.unsqueeze(classif,0),1) == torch.argmax(classif_hat,1)) \
+        acc = (torch.argmax(torch.unsqueeze(classif,1),1) == torch.argmax(classif_hat,1)) \
                 .type(torch.FloatTensor).mean()
         # acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
         #         .type(torch.FloatTensor).mean()
@@ -143,7 +148,7 @@ class BaseClassifier(pl.LightningModule):
         # print(classif.shape, classif_hat.shape)
 
         loss = self.loss(classif_hat, classif)
-        acc = (torch.argmax(torch.unsqueeze(classif,0),1) == torch.argmax(classif_hat,1)) \
+        acc = (torch.argmax(torch.unsqueeze(classif,1),1) == torch.argmax(classif_hat,1)) \
                 .type(torch.FloatTensor).mean()
         # acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
         #         .type(torch.FloatTensor).mean()
@@ -172,7 +177,7 @@ class BaseClassifier(pl.LightningModule):
             classif = F.one_hot(classif, num_classes=2).float()
         
         loss = self.loss(classif_hat, classif)
-        acc = (torch.argmax(torch.unsqueeze(classif,0),1) == torch.argmax(classif_hat,1)) \
+        acc = (torch.argmax(torch.unsqueeze(classif,1),1) == torch.argmax(classif_hat,1)) \
                 .type(torch.FloatTensor).mean()
         # acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
         #         .type(torch.FloatTensor).mean()

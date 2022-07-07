@@ -32,12 +32,19 @@ module:
   loss:
     _target_: torch.nn.CrossEntropyLoss
   # class_weights: [1,1,1,1,1,1,1,1,1,1,1]
+  class_weights: [8,7,5,5,22,170,41,13,100,5,100]
   
+
   scheduler:
-    _target_: torch.optim.lr_scheduler.StepLR
-    step_size: 250
-    gamma: 0.9
-    last_epoch: -1
+    _target_: torch.optim.lr_scheduler.MultiStepLR
+    milestones: [10, 30, 50]
+    gamma: 0.1
+
+  # scheduler:
+  #   _target_: torch.optim.lr_scheduler.StepLR
+  #   step_size: 250
+  #   gamma: 0.9
+  #   last_epoch: -1
 
 model:
   _target_: bioblue.model.ConfResNet
@@ -80,7 +87,7 @@ dataset:
       - _target_: bioblue.transforms.DeepsunRotateAndCropAroundGroup
         standard_height: 128
         standard_width: 128
-      - _target_: bioblue.transforms.DeepsunImageMaskProduct
+      # - _target_: bioblue.transforms.DeepsunImageMaskProduct
   
 
   val_dataset:
@@ -92,7 +99,7 @@ dataset:
       - _target_: bioblue.transforms.DeepsunRotateAndCropAroundGroup
         standard_height: 128
         standard_width: 128
-      - _target_: bioblue.transforms.DeepsunImageMaskProduct
+      # - _target_: bioblue.transforms.DeepsunImageMaskProduct
    
   test_dataset:     
     _target_: bioblue.dataset.DeepsunMaskedClassificationDatasetV2
@@ -103,6 +110,18 @@ dataset:
       - _target_: bioblue.transforms.DeepsunRotateAndCropAroundGroup
         standard_height: 128
         standard_width: 128
-      - _target_: bioblue.transforms.DeepsunImageMaskProduct
+      # - _target_: bioblue.transforms.DeepsunImageMaskProduct
 
-callbacks: []
+callbacks:
+  wandb:
+    _target_: bioblue.callback.WandBCallback
+    log_models: false
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    dirpath: "./models"
+    save_last: true
+    monitor: val_meaniou
+    mode: max
+    filename: "{epoch}-{val_meaniou:.2f}"
+  LR_monitor:
+    _target_: "pytorch_lightning.callbacks.LearningRateMonitor"
