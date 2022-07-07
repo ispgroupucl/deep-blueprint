@@ -108,6 +108,11 @@ class BaseClassifier(pl.LightningModule):
         loss = self.loss(classif_hat, classif)
 
         # print("loss", loss)
+        # print("classif: GT", classif, ' VS ', classif_hat )
+        # print(" unsqu classif GT", torch.unsqueeze(classif,1), ' VS ', classif_hat ) 
+        # print("argmax classif GT", torch.argmax(torch.unsqueeze(classif,1),1), ' VS ', torch.argmax(classif_hat,1) ) 
+        # print("max classif GT", torch.max(torch.unsqueeze(classif,1),1), ' VS ', torch.max(classif_hat,1) ) 
+        # print()
 
         acc = (torch.argmax(torch.unsqueeze(classif,0),1) == torch.argmax(classif_hat,1)) \
                 .type(torch.FloatTensor).mean()
@@ -172,7 +177,7 @@ class BaseClassifier(pl.LightningModule):
             classif = F.one_hot(classif, num_classes=2).float()
         
         loss = self.loss(classif_hat, classif)
-        acc = (torch.argmax(torch.unsqueeze(classif,0),1) == torch.argmax(classif_hat,1)) \
+        acc = (torch.argmax(torch.unsqueeze(classif,1),1) == torch.argmax(classif_hat,1)) \
                 .type(torch.FloatTensor).mean()
         # acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
         #         .type(torch.FloatTensor).mean()
