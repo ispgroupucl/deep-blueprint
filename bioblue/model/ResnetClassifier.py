@@ -1,13 +1,9 @@
 from re import I
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
-from torch.optim import SGD, Adam
-from torchvision import transforms
-from torchvision.datasets import ImageFolder
-from torch.utils.data import DataLoader
-import pytorch_lightning as pl
 
 class ResNetClassifierV3(nn.Module):
     def __init__(self, 
@@ -16,7 +12,7 @@ class ResNetClassifierV3(nn.Module):
                 output_format,
                 classes, 
                 architecture=None,
-                tune_fc_only=True):
+                ):
         super().__init__()
 
         self.__dict__.update(locals())
@@ -65,27 +61,44 @@ class ResNetClassifierV3(nn.Module):
             fcn2class_layer
         )
 
-        if tune_fc_only: # option to only tune the fully-connected layers
+        if self.tune_fc_only: # option to only tune the fully-connected layers
             for child in list(self.resnet_model.children())[:-1]:
                 for param in child.parameters():
                     param.requires_grad = False
 
     def forward(self, X):
-        # print('ResnetClassifierV2', [(key , X[key].shape, X[key].device ) for  key in X.keys()])
+        # print('ResnetClassifierV3', [(key , X[key].shape, X[key].device ) for  key in X.keys()])
 
         resnet_input = X['image'].repeat(1,3,1,1)
         # print('resnet_input', resnet_input.shape)
         resnet_output = self.resnet_model(resnet_input)
 
-        print('linear_size', resnet_output.shape)
+        # print('resnet_output.shape', resnet_output.shape)
+        # print('resnet_output info', torch.min(resnet_output, dim=1), torch.max(resnet_output, dim=1)) 
+
+        norm_resnet_output = F.normalize(input=resnet_output, dim=1)
+        # print('norm_resnet_output.shape', norm_resnet_output.shape)
+        # print('norm_resnet_output info', torch.min(norm_resnet_output, dim=1), torch.max(norm_resnet_output, dim=1)) 
 
         fcn_inputs = []
         for dtype in self.fcn_input_format:
-            fcn_inputs.append(torch.squeeze(X[dtype],2))
+
+            if dtype == 'angular_excentricity':
+                #expressed in degrees
+                max_normalization = 90
+                tmp = torch.squeeze(X[dtype],2) / max_normalization
+                fcn_inputs.append(tmp)
+            elif dtype == 'centroid_Lat':
+                max_normalization = 90 * np.pi / 180
+                tmp = torch.squeeze(X[dtype],2) / max_normalization
+                fcn_inputs.append(tmp)
+
+            # fcn_inputs.append(torch.squeeze(X[dtype],2))
+
         fcn_inputs = torch.cat(fcn_inputs, 1 )
-        print("fcn_inputs: ",fcn_inputs.shape)
+        # print("fcn_inputs: ",fcn_inputs.shape)
         fcn_inputs = torch.cat([fcn_inputs, resnet_output], 1 )
-        print("FULL_fcn_inputs: ",fcn_inputs.shape)
+        # print("FULL_fcn_inputs: ",fcn_inputs.shape)
 
         fc_nx = self.classifier_fcn(fcn_inputs)
 
