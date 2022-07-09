@@ -16,6 +16,7 @@ import json
 import numpy as np
 
 import traceback
+import time
 
 
 
@@ -206,10 +207,13 @@ class DeepsunMaskedClassificationDatasetV2(Dataset):
 
     def __len__(self) -> int:
         # raise NotImplementedError
+        # print(self.dataset_length)
         return self.dataset_length
         # return 10
     
     def __getitem__(self, index: int, do_transform=True):
+
+        st = time.time()
 
         sample = {} # dictionnary with 'image', 'class', 'angular_excentricity', 'centroid_lat'
 
@@ -246,6 +250,9 @@ class DeepsunMaskedClassificationDatasetV2(Dataset):
             sample = self.transforms(**sample)
 
         # print([ (key,type(sample[key])) for key in list(sample.keys())])
+
+        et = time.time()
+        # print(f'DeepsunMaskedClassificationDatasetV2 getitem time: {et-st} seconds')
 
         return sample
         

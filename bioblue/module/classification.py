@@ -1,3 +1,4 @@
+from time import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,6 +12,8 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 
 from hydra.utils import instantiate
+
+import time
 
 class BaseClassifier(pl.LightningModule):
     def __init__(
@@ -108,12 +111,20 @@ class BaseClassifier(pl.LightningModule):
         return classif, classif_hat
     
     def training_step(self, batch, batch_idx):
+        st = time.time()
         classif, classif_hat = self.common_step(batch)
+        et = time.time()
+        # print(f'forward time: {et-st} seconds')
 
         if self.num_classes == 2:
             classif = F.one_hot(classif, num_classes=2).float()
         
+        ############################
+
+        st = time.time()
         loss = self.loss(classif_hat, classif)
+        et = time.time()
+        # print(f'loss computation time: {et-st} seconds')
 
         # print("loss", loss)
         # print("classif: GT", classif, ' VS ', classif_hat )
@@ -122,14 +133,22 @@ class BaseClassifier(pl.LightningModule):
         # print("max classif GT", torch.max(torch.unsqueeze(classif,1),1), ' VS ', torch.max(classif_hat,1) ) 
         # print()
 
+        ############################
+        st = time.time()
+
         acc = (torch.argmax(torch.unsqueeze(classif,1),1) == torch.argmax(classif_hat,1)) \
                 .type(torch.FloatTensor).mean()
         # acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
         #         .type(torch.FloatTensor).mean()
 
+
         # perform logging
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.log("train_acc", acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        
+        et = time.time()
+        # print(f'forward time: {et-st} seconds')
+        
         return dict(loss=loss)
 
 
