@@ -21,6 +21,39 @@ from scipy.ndimage.interpolation import rotate
 
 import matplotlib.pyplot as plt
 
+import time
+
+
+class DeepsunClassificationRandomFlip(Flip):
+    def __init__(self, always_apply=False, p=0.5):
+        super().__init__(always_apply, p)
+
+    def __call__(self, *args, force_apply=False, **kwargs):
+        mod_kwargs = deepcopy(kwargs)
+        mod_kwargs['image'] = kwargs['image']
+        mod_kwargs['mask'] = kwargs['mask']
+        processed_kwargs = super().__call__(*args, force_apply=force_apply, **mod_kwargs)
+
+        kwargs['image'] = processed_kwargs['image']
+        kwargs['mask'] = processed_kwargs['mask']
+        return kwargs
+
+
+class DeepsunClassificationRandomRotate(SafeRotate):
+    def __init__(self, limit=90, interpolation=cv2.INTER_LINEAR, border_mode=cv2.BORDER_REFLECT_101, 
+                        value=None, mask_value=None, always_apply=False, p=0.5):
+        super().__init__(limit, interpolation, border_mode, value, mask_value, always_apply, p)
+
+    def __call__(self, *args, force_apply=False, **kwargs):
+        mod_kwargs = deepcopy(kwargs)
+        mod_kwargs['image'] = kwargs['image']
+        mod_kwargs['mask'] = kwargs['mask']
+        processed_kwargs = super().__call__(*args, force_apply=force_apply, **mod_kwargs)
+
+        kwargs['image'] = processed_kwargs['image']
+        kwargs['mask'] = processed_kwargs['mask']
+        return kwargs
+
 class DeepsunRandomRotate(SafeRotate):
     def __init__(self, limit=90, interpolation=cv2.INTER_LINEAR, border_mode=cv2.BORDER_REFLECT_101, 
                         value=None, mask_value=None, always_apply=False, p=0.5):
@@ -268,6 +301,9 @@ class DeepsunRotateAndCropAroundGroup(DualTransform):
 
     def __call__(self, *args, force_apply=False, **kwargs):
         # print('DeepsunRotateAndCropAroundGroup')
+
+        st = time.time()
+
         img = kwargs['image']
         msk = kwargs['mask']
 
@@ -338,7 +374,55 @@ class DeepsunRotateAndCropAroundGroup(DualTransform):
 
         kwargs['image'] = img_group_crop.copy()
         kwargs['mask'] = msk_group_crop.copy()
+
+
+        et = time.time()
+        # print(f'DeepsunRotateAndCropAroundGroup time: {et-st} seconds')
         
+        
+        return kwargs
+
+
+from mpl_toolkits.axes_grid1.axes_rgb import make_rgb_axes, RGBAxes
+
+
+class DeepsunImageAndScalars2ThreeChannels(DualTransform):
+    def __init__(self, always_apply=False, p=1.0):     
+        super().__init__(self, p=p)
+        self.index = 0
+
+    def __call__(self, *args, force_apply=False, **kwargs):
+        img = kwargs['image'] 
+        img = img / np.max(img) # to [0,1] range
+
+        angular_excentricity = kwargs['angular_excentricity'] / 90 # to [0,1] range
+
+        centroid_Lat = (kwargs['centroid_Lat'] * (180/np.pi)) # to degrees -> [-90,90]
+        centroid_Lat = (centroid_Lat + 90) / 180 # to [0,1] range
+
+
+        excent_img = np.ones_like(img)*angular_excentricity
+        Lat_img = np.ones_like(img)*centroid_Lat
+
+        # print(f'img: {img.shape},  excent_img: {excent_img.shape}, Lat_img: {Lat_img.shape}')
+
+        img_3channels = np.stack((img, excent_img, Lat_img), axis=0)
+        # img_3channels = np.stack((excent_img, img,  Lat_img), axis=0)
+        # img_3channels = np.stack((excent_img, Lat_img, img ), axis=0)
+
+        # print(f'img_3channels= {img_3channels.shape}')
+
+        kwargs["image"] = img_3channels
+
+        # fig = plt.figure()
+        # ax = RGBAxes(fig, [0.1, 0.1, 0.8, 0.8], pad=0.0)
+        # r, g, b = img_3channels[0,:,:], img_3channels[1,:,:], img_3channels[2,:,:]
+        # ax.imshow_rgb(r, g, b)
+        # plt.savefig(f'./test_3Channels_{self.index}.png', dpi=150)
+
+        self.index+=1
+
+
         return kwargs
 
 class DeepsunImageMaskProduct(DualTransform):

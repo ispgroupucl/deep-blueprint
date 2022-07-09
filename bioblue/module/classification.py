@@ -83,7 +83,10 @@ class BaseClassifier(pl.LightningModule):
         # print('classifier_forward')
         # return self.classifier(X)
         for dtype in X:
-            X[dtype] = X[dtype].unsqueeze(1).to(torch.float)
+            if len(X[dtype].shape) == 3:
+                X[dtype] = X[dtype].unsqueeze(1).to(torch.float)
+            if len(X[dtype].shape) == 4:
+                X[dtype] = X[dtype].to(torch.float)
         classif = self.classifier(X)
         return classif
 
