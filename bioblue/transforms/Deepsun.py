@@ -233,7 +233,27 @@ class DeepsunMaskMerger(DualTransform):
         return out_mask
 
 
+def rotate_CV_bound(image, angle, interpolation):
+    # grab the dimensions of the image and then determine the
+    # center
+    (h, w) = image.shape[:2]
+    (cX, cY) = (w // 2, h // 2)
+    # grab the rotation matrix (applying the negative of the
+    # angle to rotate clockwise), then grab the sine and cosine
+    # (i.e., the rotation components of the matrix)
+    M = cv2.getRotationMatrix2D((cX, cY), angle, 1.0)
+    cos = np.abs(M[0, 0])
+    sin = np.abs(M[0, 1])
+    # compute the new bounding dimensions of the image
+    nW = int((h * sin) + (w * cos))
+    nH = int((h * cos) + (w * sin))
+    # adjust the rotation matrix to take into account translation
+    M[0, 2] += (nW / 2) - cX
+    M[1, 2] += (nH / 2) - cY
+    # perform the actual rotation and return the image
+    return cv2.warpAffine(image, M, (nW, nH),flags=interpolation)
 class DeepsunRotateAndCropAroundGroup(DualTransform):
+
     def __init__(self, standard_height, standard_width,  always_apply=False, p=1.0):     
         super().__init__(always_apply=always_apply, p=p)
         self.standard_height = standard_height
@@ -256,8 +276,11 @@ class DeepsunRotateAndCropAroundGroup(DualTransform):
         deltashapeX = kwargs['deltashapeX']
         deltashapeY = kwargs['deltashapeY']
         # print('solar_angle', angle)
-        rot_img = rotate(img, angle=angle, reshape=True)
-        rot_msk = rotate(msk, angle=angle, reshape=True)
+
+        # rot_img = rotate(img, angle=angle, reshape=True)
+        # rot_msk = rotate(msk, angle=angle, reshape=True)
+        rot_img = rotate_CV_bound(img, angle=angle, interpolation=cv2.INTER_LINEAR)
+        rot_msk = rotate_CV_bound(msk, angle=angle, interpolation=cv2.INTER_LINEAR)
 
         rot_img_zoom = rot_img[deltashapeX//2:rot_img.shape[0]-deltashapeX//2,
                           deltashapeY//2:rot_img.shape[1]-deltashapeY//2] 
