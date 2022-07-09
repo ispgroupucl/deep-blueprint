@@ -6,6 +6,58 @@ import torch.nn.functional as F
 import torchvision.models as models
 
 
+class MobileNetClassifier(nn.Module):
+    def __init__(self, 
+                model_cfg,
+                input_format,
+                output_format,
+                classes, 
+                architecture=None,
+                ):
+        super().__init__()
+
+        self.__dict__.update(locals())
+        mobilenets = {
+            'v1': models.mobilenet, 'v2': models.mobilenet_v2,
+            'v3_small': models.mobilenet_v3_small,
+            'v3_large': models.mobilenet_v3_large,
+        }
+        
+
+        self.classes = classes
+        self.n_classes = len(classes)
+
+        self.architecture = architecture
+        
+        self.mobilenet_version=self.architecture['mobilenet_version']
+        self.pretrained = self.architecture['pretrained']
+
+        self.input_format = input_format
+
+        self.fcn_input_format = [ inp for inp in self.input_format if inp != 'image']
+        self.input_format = [inp for inp in self.input_format if inp == 'image']
+
+        if self.pretrained:
+            self.model = mobilenets[self.mobilenet_version](pretrained = self.pretrained)
+            in_feats = self.model.classifier[1].in_features
+            self.model.classifier[1] = nn.Linear(in_features=in_feats, out_features=self.n_classes)
+
+        else:
+            # Using a pretrained MobileNet backbone
+            self.model = mobilenets[self.mobilenet_version](num_classes=self.n_classes,pretrained=self.pretrained)
+
+
+    def forward(self, X):
+        import matplotlib.pyplot as plt
+        # print('ResnetClassifierV3', [(key , X[key].shape, X[key].device ) for  key in X.keys()])
+
+        mobilenet_input = X['image']
+        # print('resnet_input', resnet_input.shape)
+
+        output = self.model(mobilenet_input)
+
+        return output
+
 
 class ResNetClassifierV4(nn.Module):
     def __init__(self, 

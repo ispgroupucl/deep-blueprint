@@ -31,8 +31,8 @@ module:
   # ######## WORKS
   loss:
     _target_: torch.nn.CrossEntropyLoss
-  # class_weights: [1,1,1,1,1,1,1,1,1,1,1]
-  class_weights: [8,7,5,5,22,170,41,13,100,5,100]
+  class_weights: [1,1,1,1,1,1,1,1,1,1,1]
+  # class_weights: [8,7,5,5,22,170,41,13,100,5,100]
   
 
   scheduler:
@@ -48,7 +48,8 @@ module:
 
 model:
   # _target_: bioblue.model.ResNetClassifierV2
-  _target_: bioblue.model.ResNetClassifierV3
+  # _target_: bioblue.model.ResNetClassifierV4
+  _target_: bioblue.model.MobileNetClassifier
   
   # input_format: ["image"]
   input_format: ["image", "angular_excentricity", "centroid_Lat" ]
@@ -57,11 +58,16 @@ model:
   classes: ${use_classes}
 
   architecture:
-    resnet_version: '50'
-    pretrained: true
-    tune_fc_only: false
-    fcn_width: 500
-    fcn_num_hidden: 3
+    mobilenet_version: 'v2'
+    pretrained: false
+
+
+  # architecture:
+  #   resnet_version: '18'
+  #   pretrained: true
+  #   tune_fc_only: false
+  #   fcn_width: 500
+  #   fcn_num_hidden: 3
 
 
   # architecture:
@@ -119,6 +125,9 @@ dataset:
       - _target_: bioblue.transforms.DeepsunRotateAndCropAroundGroup
         standard_height: 128
         standard_width: 128
+      - _target_: bioblue.transforms.DeepsunClassificationRandomFlip
+      # - _target_: bioblue.transforms.DeepsunClassificationRandomRotate
+      - _target_: bioblue.transforms.DeepsunImageAndScalars2ThreeChannels
       # - _target_: bioblue.transforms.DeepsunImageMaskProduct
   
 
@@ -131,6 +140,9 @@ dataset:
       - _target_: bioblue.transforms.DeepsunRotateAndCropAroundGroup
         standard_height: 128
         standard_width: 128
+      - _target_: bioblue.transforms.DeepsunClassificationRandomFlip
+      # - _target_: bioblue.transforms.DeepsunClassificationRandomRotate
+      - _target_: bioblue.transforms.DeepsunImageAndScalars2ThreeChannels
       # - _target_: bioblue.transforms.DeepsunImageMaskProduct
    
   test_dataset:     
@@ -142,6 +154,9 @@ dataset:
       - _target_: bioblue.transforms.DeepsunRotateAndCropAroundGroup
         standard_height: 128
         standard_width: 128
+      - _target_: bioblue.transforms.DeepsunClassificationRandomFlip
+      # - _target_: bioblue.transforms.DeepsunClassificationRandomRotate
+      - _target_: bioblue.transforms.DeepsunImageAndScalars2ThreeChannels
       # - _target_: bioblue.transforms.DeepsunImageMaskProduct
 
 callbacks:
