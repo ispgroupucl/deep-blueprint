@@ -10,6 +10,7 @@ import numpy as np
 
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
+import torchmetrics
 
 from hydra.utils import instantiate
 
@@ -136,10 +137,14 @@ class BaseClassifier(pl.LightningModule):
         ############################
         st = time.time()
 
-        acc = (torch.argmax(torch.unsqueeze(classif,1),1) == torch.argmax(classif_hat,1)) \
-                .type(torch.FloatTensor).mean()
-        # acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
-        #         .type(torch.FloatTensor).mean()
+        if self.num_classes == 2:
+            acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
+                    .type(torch.FloatTensor).mean()
+        else:
+            acc = (torch.argmax(torch.unsqueeze(classif,1),1) == torch.argmax(classif_hat,1)) \
+                    .type(torch.FloatTensor).mean()
+            # acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
+            #         .type(torch.FloatTensor).mean()
 
 
         # perform logging
@@ -175,10 +180,17 @@ class BaseClassifier(pl.LightningModule):
         # print(classif.shape, classif_hat.shape)
 
         loss = self.loss(classif_hat, classif)
-        acc = (torch.argmax(torch.unsqueeze(classif,1),1) == torch.argmax(classif_hat,1)) \
-                .type(torch.FloatTensor).mean()
-        # acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
-        #         .type(torch.FloatTensor).mean()
+
+        # print(classif.shape, classif_hat.shape)
+
+        if self.num_classes == 2:
+            acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
+                    .type(torch.FloatTensor).mean()
+        else:
+            acc = (torch.argmax(torch.unsqueeze(classif,1),1) == torch.argmax(classif_hat,1)) \
+                    .type(torch.FloatTensor).mean()
+            # acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
+            #         .type(torch.FloatTensor).mean()
 
         # perform logging
         self.log("val_loss", loss, on_epoch=True, prog_bar=True, logger=True)
@@ -198,16 +210,35 @@ class BaseClassifier(pl.LightningModule):
 
     
     def test_step(self, batch, batch_idx):
+        # print()
         classif, classif_hat = self.common_step(batch)
 
         if self.num_classes == 2:
             classif = F.one_hot(classif, num_classes=2).float()
         
         loss = self.loss(classif_hat, classif)
-        acc = (torch.argmax(torch.unsqueeze(classif,1),1) == torch.argmax(classif_hat,1)) \
-                .type(torch.FloatTensor).mean()
-        # acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
-        #         .type(torch.FloatTensor).mean()
+
+        if self.num_classes == 2:
+            acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
+                    .type(torch.FloatTensor).mean()
+        else:
+            # print(classif,torch.argmax(classif_hat,1))
+
+            batch_acc = torchmetrics.Accuracy().to(classif_hat.device)
+            # print(classif_hat.shape, classif_hat.device)
+            # print(classif.shape, classif.device)
+            pred = classif_hat.softmax(dim=-1)
+            # print(pred.device)
+
+            acc = batch_acc(pred,classif)
+            # print(f'Accuracy on batch: {acc}')
+
+            # acc = (torch.unsqueeze(classif,1) == torch.argmax(classif_hat,1)) \
+            #         .type(torch.FloatTensor).mean()
+            # acc = (torch.unsqueeze(classif,1) == torch.argmax(classif_hat,1)) \
+            #         .type(torch.FloatTensor).mean()
+            # acc = (torch.argmax(classif,1) == torch.argmax(classif_hat,1)) \
+            #         .type(torch.FloatTensor).mean()
         
         # perform logging
         self.log("test_loss", loss, on_step=True, prog_bar=True, logger=True)
@@ -248,8 +279,8 @@ class BaseClassifier(pl.LightningModule):
             optimizer=optimizer,
             lr_scheduler={
                 "scheduler": scheduler,
-                "interval": "step",
-                # "interval": "epoch",
+                # "interval": "step",
+                "interval": "epoch",
                 "frequency": 1,
                 "reduce_on_plateau": True,
                 "monitor": "val_loss",

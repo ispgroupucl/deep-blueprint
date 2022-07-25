@@ -90,7 +90,9 @@ class DeepsunMaskedClassificationDataset(Dataset):
                             }
 
                 # self.groups.append({k2: dataset_g})
-                self.groups[k2] = dataset_g
+
+                if dataset_g['group_info'][self.classification] in classes:
+                    self.groups[k2] = dataset_g
 
             # num_groups += len(v['groups'])
         # self.dataset_length = num_groups
@@ -180,6 +182,7 @@ class DeepsunMaskedClassificationDatasetV2(Dataset):
 
         self.classes_mapper = {c: i for i,c in enumerate(classes)}
 
+        # print(classes)
         self.files = {}
         for i, bn in enumerate(sorted(list(self.partition_dict.keys()))):
             bn = bn.split('_')[0]
@@ -199,7 +202,17 @@ class DeepsunMaskedClassificationDatasetV2(Dataset):
 
         # print(self.files)
 
-        self.groups = self.partition_dict
+        self.partition_dict
+
+        # print(list(self.partition_dict.values())[0])
+
+        self.groups = {}
+        for k,v in self.partition_dict.items():
+
+            if v[self.classification] in classes:
+                    self.groups[k] = v
+
+      
 
         self.dataset_length = len(list(self.groups.keys()))
 

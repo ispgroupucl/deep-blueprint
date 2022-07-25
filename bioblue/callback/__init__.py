@@ -8,3 +8,7 @@ from .image import (
     SavePredictionMaskCallback,
     SavePredictionMaskCallback2,
 )
+from .classification import (
+    ShowClassificationPredictionsCallback,
+    ClassificationConfusionMatrixCallback,
+)
