@@ -13,7 +13,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning import seed_everything
 
 
-@hydra.main(config_path="conf", config_name="config",version_base=None)
+@hydra.main(config_path="conf", config_name="config",version_base="1.2")
 def main(cfg: DictConfig) -> None:
     seed_everything(cfg.seed, workers=True)
     latest_checkpoint = Path(os.getcwd()) / "models/last.ckpt"

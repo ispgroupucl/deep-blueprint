@@ -9,4 +9,8 @@ defaults:
   - exp: test
   # - override hydra/launcher: gpu
 
-seed: 0
+seed: 1
+
+hydra:
+  job:
+    chdir: true
