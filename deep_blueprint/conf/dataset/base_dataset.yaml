@@ -1,0 +1,22 @@
+_target_: deep_blueprint.dataset.baseDataModule
+root_dir: './'
+dataset_name: "base_mnist"
+batch_size: 16
+num_workers: 12
+
+dtypes: ['image', 'class']
+
+train_dataset:
+  _target_: deep_blueprint.dataset.MNistDataset
+  partition: "train"
+  dtypes: ${dataset.dtypes}
+  transforms:
+    - _target_: deep_blueprint.transforms.RepeatSingleChannel
+val_dataset:
+  _target_: deep_blueprint.dataset.MNistDataset
+  partition: "val"
+  dtypes: ${dataset.dtypes}
+  transforms: 
+    - _target_: deep_blueprint.transforms.RepeatSingleChannel
+
+test_dataset: ${dataset.val_dataset}

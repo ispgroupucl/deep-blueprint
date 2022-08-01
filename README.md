@@ -1,4 +1,4 @@
-Bio-blueprints
+Deep-blueprints
 ##############
 
 Installation
@@ -11,3 +11,7 @@ Using poetry::
 
 Running
 -------
+
+To run a toy example of training on MNIST::
+
+    deep_blueprint gpus=1

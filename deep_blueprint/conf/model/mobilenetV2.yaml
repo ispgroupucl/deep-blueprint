@@ -1,0 +1,10 @@
+_target_: deep_blueprint.model.MobileNetClassifier
+
+input_format: ["image"]
+output_format: ["class"]
+
+classes: ${use_classes}
+
+architecture:
+  mobilenet_version: 'v2'
+  pretrained: true

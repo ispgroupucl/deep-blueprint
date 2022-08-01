@@ -1,0 +1,12 @@
+defaults:
+  - _self_
+  - trainer: default
+  - model: mobilenetV2
+  - module: base_classification
+  - dataset: base_dataset
+  - logger: csv_logger
+  - server: local
+  - exp: test
+  # - override hydra/launcher: gpu
+
+seed: 0
