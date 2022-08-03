@@ -1,12 +1,14 @@
 [tool.poetry]
 name = "deep_blueprint"
 version = "0.1.0"
-description = ""
-authors = ["Niels Sayez <niels.sayez@uclouvain.be>"]
+description = "Generic Pytorch framework, focused on segmentation and classification. Using pytorch-lightning and hydra for configuration and training."
+authors = [
+    "Victor Joos <victor.joos@uclouvain.be>",
+    "Niels Sayez <niels.sayez@uclouvain.be>",
+]
 
 [tool.poetry.dependencies]
-python = ">=3.8.0,<=3.10.4"
-# python = ">=3.7.1,<=3.8.10"
+python = ">=3.8.0,<=3.10.5"
 albumentations = "1.2.1"
 cachetools = "5.2.0"
 click = "8.1.3"
@@ -30,7 +32,7 @@ torchvision = "^0.12.0"
 tqdm = "4.64.0"
 # typer = "0.6.1"
 scikit-image = "^0.19.2"
-hydra-core =  "^1.1.1"
+hydra-core = "^1.1.1"
 hydra-submitit-launcher = "^1.1.6"
 numpy = "^1.23.1"
 wandb = "^0.12.21"
@@ -39,7 +41,7 @@ fsspec = "^2022.7.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
-hypothesis = {extras = ["numpy"], version = "^5.41.2"}
+hypothesis = { extras = ["numpy"], version = "^5.41.2" }
 jupyterlab = "<3.0.0"
 ipympl = "^0.5.7"
 black = "^19.10b0"
